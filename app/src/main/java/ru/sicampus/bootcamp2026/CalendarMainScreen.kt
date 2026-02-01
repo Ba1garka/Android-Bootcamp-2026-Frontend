@@ -207,7 +207,7 @@ fun DayView(
             val hourEvents = events.filter { it.startTime.hour == hour }
 
             Column(
-                modifier = Modifier.fillMaxWidth().height(70.dp).border(0.5.dp, Color.LightGray)
+                modifier = Modifier.fillMaxWidth().height(90.dp).border(0.5.dp, Color.LightGray)
             ) {
                 // время
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -219,7 +219,7 @@ fun DayView(
                     // встречи
                     Column(modifier = Modifier) {
                         hourEvents.forEach { event ->
-                            EventCard(event = event, modifier = Modifier.padding(4.dp))
+                            EventCard(event = event, modifier = Modifier.padding(4.dp), mode = false)
                         }
                     }
                 }
@@ -500,7 +500,7 @@ fun EventList(events: List<CalendarEvent>, modifier: Modifier = Modifier) {
         }
         else {
             items(events) { event ->
-                EventCard(event = event, modifier = Modifier.padding(8.dp))
+                EventCard(event = event, modifier = Modifier.padding(8.dp), mode = true)
             }
         }
     }
@@ -509,7 +509,8 @@ fun EventList(events: List<CalendarEvent>, modifier: Modifier = Modifier) {
 @Composable
 fun EventCard(
     event: CalendarEvent,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    mode : Boolean
 ) {
     Card(
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -541,12 +542,15 @@ fun EventCard(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "START",
-                        fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (mode){
+                        Text(
+                            text = "START",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     Text(
                         text = event.startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = 16.sp,
@@ -561,12 +565,14 @@ fun EventCard(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "END",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        fontWeight = FontWeight.Bold
-                    )
+                    if(mode){
+                        Text(
+                            text = "END",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                     Text(
                         text = event.endTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = 16.sp,
