@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
                 MaterialTheme(
                     typography = CustomTypography
                 ) {
-                    HomeScreen()
+                   CalendarScreen()
                 }
             }
         }
