@@ -1,5 +1,7 @@
 package ru.sicampus.bootcamp2026.ui.screen.home
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -11,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,12 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.R
+import ru.sicampus.bootcamp2026.domain.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.theme.Black
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Grey
 import ru.sicampus.bootcamp2026.ui.theme.Yellow
+import java.time.LocalDate
 
 @Composable
 fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
@@ -43,6 +46,41 @@ fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
         is HomeState.Content -> HomeContentState(currentState)
     }
 
+}
+
+@Composable
+private  fun HomeLoadingState(){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        CircularProgressIndicator(
+            modifier = Modifier.size(48.dp)
+        )
+    }
+}
+
+@Composable
+private  fun HomeErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+        ){
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(state.reason)
+            Button(
+                onClick = onRefresh
+            ){
+                Text("Refresh")
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeContentState( state: HomeState.Content ){
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -117,25 +155,17 @@ fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
                 }
             }
 
-            val events = listOf(
-                Event("11:00", "совещание", BluePrimary),
-                Event("11:00", "совещание", BluePrimary),
-                Event("10:00", "совещание", BluePrimary),
-                Event("13:00", "совещание", BluePrimary),
-                Event("15:00", "совещание", BluePrimary),
-                Event("17:00", "совещание", BluePrimary),
-                Event("15:00", "совещание", BluePrimary),
-                Event("17:00", "совещание", BluePrimary)
-            )
-
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(events) { event ->
-                    EventCard(event = event)
+                items(state.events) { event ->
+                    if (event.date == LocalDate.now().toString()){
+                        EventCard(event = event)
+                    }
+
                 }
             }
         }
@@ -169,51 +199,6 @@ fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
 }
 
 @Composable
-private  fun HomeLoadingState(){
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ){
-        CircularProgressIndicator(
-            modifier = Modifier.size(48.dp)
-        )
-    }
-}
-
-@Composable
-private  fun HomeErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-        ){
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(state.reason)
-            Button(
-                onClick = onRefresh
-            ){
-                Text("Refresh")
-            }
-        }
-    }
-}
-
-@Composable
-private  fun HomeContentState( state: HomeState.Content ){
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ){
-        Row {
-            state.events.forEach { event ->
-
-            }
-        }
-    }
-}
-
-@Composable
 fun NavIcon(drawableId: Int, isSelected: Boolean = false) {
     IconButton(
         onClick = { },
@@ -229,11 +214,11 @@ fun NavIcon(drawableId: Int, isSelected: Boolean = false) {
 }
 
 @Composable
-fun EventCard(event: Event) {
+fun EventCard(event: EventEntity) {
     Card(
         modifier = Modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors(
-            containerColor = event.cardColor
+            containerColor = BluePrimary
         ),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -262,7 +247,7 @@ fun EventCard(event: Event) {
 
                 Text( text = event.title, style = MaterialTheme.typography.bodyMedium )
 
-                Text( text = event.time, style = MaterialTheme.typography.bodyLarge )
+                Text( text = event.startTime, style = MaterialTheme.typography.bodyLarge )
             }
         }
     }

@@ -4,13 +4,31 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class EventDto (
+data class EventDto(
+    @SerialName("id")
+    val id: Long,
+
     @SerialName("title")
-    val title: String?,
+    val title: String,
+
     @SerialName("description")
-    val description: String?,
-    @SerialName("organizer_id")
-    val organizer_id: String?,
-    @SerialName("time_slot_id")
-    val time_slot_id: String?,
+    val description: String,
+
+    @SerialName("organizerId")
+    val organizerId: Long,
+
+    @SerialName("organizerName")
+    val organizerName: String,
+
+    @SerialName("date")
+    val date: String,
+
+    @SerialName("startTime")
+    val startTime: String,
+
+    @SerialName("endTime")
+    val endTime: String,
+
+    @SerialName("participants")
+    val participants: List<ParticipantDto>
 )

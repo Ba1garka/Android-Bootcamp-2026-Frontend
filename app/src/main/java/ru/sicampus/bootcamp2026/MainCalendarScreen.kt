@@ -22,6 +22,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.sicampus.bootcamp2026.domain.entities.EventEntity
+import ru.sicampus.bootcamp2026.ui.screen.home.HomeState
+import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
@@ -33,16 +37,60 @@ import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import kotlin.text.substring
 
 
+@Composable
+fun CalendarScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>()) {
 
+    val state by viewModel.uiState.collectAsState()
+
+    when(val currentState = state){
+        is HomeState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
+        is HomeState.Loading -> CalendarLoadingState()
+        is HomeState.Content -> CalendarContentState(currentState)
+    }
+
+}
+
+@Composable
+private fun CalendarLoadingState(){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        CircularProgressIndicator(
+            modifier = Modifier.size(48.dp)
+        )
+    }
+}
+
+@Composable
+private fun CalendarErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(state.reason)
+            Button(
+                onClick = onRefresh
+            ){
+                Text("Refresh")
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarScreen() {
+private fun CalendarContentState( state: HomeState.Content ){
     val selectedDate = remember { mutableStateOf(LocalDate.now()) }
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
-    val events = remember { bdEvents() }
+
+    val events = remember { state.events }
 
     Scaffold(
         topBar = {
@@ -142,7 +190,7 @@ fun CalendarScreen() {
                     yearMonth = YearMonth.from(selectedDate.value),
                     selectedDate = selectedDate.value,
                     startDate = selectedDate.value.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
-                    events = events.filter { it.date == selectedDate.value }
+                    events = events.filter { it.date == selectedDate.value.toString() }
                 )
                 CalendarViewMode.WEEK -> WeekView(
                     yearMonth = YearMonth.from(selectedDate.value),
@@ -162,7 +210,7 @@ fun CalendarScreen() {
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             EventList(
-                events = events.filter { it.date == selectedDate.value }
+                events = events.filter { it.date == selectedDate.value.toString() }
             )
         }
     }
@@ -173,7 +221,7 @@ fun DayView(
     yearMonth: YearMonth,
     selectedDate: LocalDate,
     startDate: LocalDate,
-    events: List<CalendarEvent>,
+    events: List<EventEntity>,
     onDayClick: (LocalDate) -> Unit = {}
 ) {
     val days = remember(startDate) { (0..6).map { startDate.plusDays(it.toLong()) } }
@@ -189,7 +237,7 @@ fun DayView(
             val isCurrentMonth = date.month == yearMonth.month
             val isToday = date == LocalDate.now()
             val isSelected = date == selectedDate
-            val dayEvents = events.filter { it.date == date }
+            val dayEvents = events.filter { it.date == date.toString() }
 
             DayCircle(
                 date = date,
@@ -207,7 +255,7 @@ fun DayView(
         items(10) { index ->
 
             val hour = 9 + index
-            val hourEvents = events.filter { it.startTime.hour == hour }
+            val hourEvents = events.filter { it.startTime.substring(0, 2).toInt() == hour }
 
             Column(
                 modifier = Modifier.fillMaxWidth().height(90.dp).border(0.5.dp, Color.LightGray)
@@ -236,7 +284,7 @@ fun WeekView(
     yearMonth: YearMonth,
     selectedDate: LocalDate,
     startDate: LocalDate,
-    events: List<CalendarEvent>,
+    events: List<EventEntity>,
     onDayClick: (LocalDate) -> Unit = {}
 ) {
     val days = remember(startDate) { (0..6).map { startDate.plusDays(it.toLong()) } }
@@ -244,7 +292,7 @@ fun WeekView(
     // Группируем события по дням и часам
     val eventsGroup = remember(events, days) {
         days.associateWith { day ->
-            events.filter { it.date == day }.groupBy { it.startTime.hour }
+            events.filter { it.date == day.toString() }.groupBy { it.startTime.substring(0, 2).toInt() }
         }
     }
 
@@ -261,7 +309,7 @@ fun WeekView(
                 val isCurrentMonth = date.month == yearMonth.month
                 val isToday = date == LocalDate.now()
                 val isSelected = date == selectedDate
-                val dayEvents = events.filter { it.date == date }
+                val dayEvents = events.filter { it.date == date.toString() }
 
                 DayCircle(
                     date = date,
@@ -292,7 +340,7 @@ fun WeekView(
 fun HourRow(
     hour: Int,
     days: List<LocalDate>,
-    eventsGroup: Map<LocalDate, Map<Int, List<CalendarEvent>>>,
+    eventsGroup: Map<LocalDate, Map<Int, List<EventEntity>>>,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
@@ -330,12 +378,12 @@ fun HourRow(
 
 @Composable
 fun EventChip(
-    event: CalendarEvent,
+    event: EventEntity,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors( containerColor = Color(event.color) ),
+        colors = CardDefaults.cardColors( containerColor = BluePrimary ),
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(
@@ -348,7 +396,7 @@ fun EventChip(
 fun MonthView(
     yearMonth: YearMonth,
     selectedDate: LocalDate,
-    events: List<CalendarEvent>,
+    events: List<EventEntity>,
     onDateClick: (LocalDate) -> Unit
 ) {
     val firstDayOfMonth = yearMonth.atDay(1)
@@ -377,7 +425,7 @@ fun MonthView(
                         val isCurrentMonth = date.month == yearMonth.month
                         val isToday = date == LocalDate.now()
                         val isSelected = date == selectedDate
-                        val dayEvents = events.filter { it.date == date }
+                        val dayEvents = events.filter { it.date == date.toString() }
 
                         DayCircle(
                             date = date,
@@ -401,7 +449,7 @@ fun DayCircle(
     isCurrentMonth: Boolean,
     isToday: Boolean,
     isSelected: Boolean,
-    events: List<CalendarEvent>,
+    events: List<EventEntity>,
     onDateClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -460,7 +508,7 @@ fun DayCircle(
 }
 
 @Composable
-fun EventDots(events: List<CalendarEvent>) {
+fun EventDots(events: List<EventEntity>) {
     val maxDots = 3
     val eventsShow = if (events.size > maxDots) events.take(maxDots) else events
     val eventsNotShow = events.size - maxDots
@@ -471,7 +519,7 @@ fun EventDots(events: List<CalendarEvent>) {
     ) {
         eventsShow.forEach { event ->
             Box(
-                modifier = Modifier.size(6.dp).background( color = Color(event.color), shape = CircleShape)
+                modifier = Modifier.size(6.dp).background( color = BluePrimary, shape = CircleShape)
                     .padding(horizontal = 1.dp)
             )
         }
@@ -488,7 +536,7 @@ fun EventDots(events: List<CalendarEvent>) {
 }
 
 @Composable
-fun EventList(events: List<CalendarEvent>, modifier: Modifier = Modifier) {
+fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier) {
         if (events.isEmpty()) {
             item {
@@ -511,9 +559,9 @@ fun EventList(events: List<CalendarEvent>, modifier: Modifier = Modifier) {
 
 @Composable
 fun EventCard(
-    event: CalendarEvent,
+    event: EventEntity,
     modifier: Modifier = Modifier,
-    mode : Boolean
+    mode: Boolean
 ) {
     Card(
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -532,7 +580,7 @@ fun EventCard(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
         ) {
             // Левая цветная полоса
-            Box( modifier = Modifier.width(6.dp).fillMaxHeight().background(Color(event.color)) )
+            Box( modifier = Modifier.width(6.dp).fillMaxHeight().background(BluePrimary) )
 
             Spacer( modifier = Modifier.width(8.dp) )
 
