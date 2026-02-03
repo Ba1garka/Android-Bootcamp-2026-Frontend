@@ -170,48 +170,9 @@ private fun HomeContentState( state: HomeState.Content ){
             }
         }
 
-        // навигация
-        Box(
-            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(bottom = 25.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                modifier = Modifier.width(320.dp).height(56.dp),
-                shape = RoundedCornerShape(30.dp),
-                color = Grey.copy(alpha = 0.90f),
-                tonalElevation = 12.dp,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    NavIcon(drawableId = R.drawable.home, isSelected = true)
-                    NavIcon(drawableId = R.drawable.list)
-                    NavIcon(drawableId = R.drawable.add)
-                    NavIcon(drawableId = R.drawable.calendar)
-                    NavIcon(drawableId = R.drawable.person)
-                }
-            }
-        }
     }
 }
 
-@Composable
-fun NavIcon(drawableId: Int, isSelected: Boolean = false) {
-    IconButton(
-        onClick = { },
-        modifier = Modifier.size(32.dp)
-    ) {
-        Icon(
-            painter = painterResource(id = drawableId),
-            contentDescription = "Навигация",
-            tint = if (isSelected) Black else BlackIcon,
-            modifier = Modifier.size(24.dp)
-        )
-    }
-}
 
 @Composable
 fun EventCard(event: EventEntity) {
@@ -244,20 +205,12 @@ fun EventCard(event: EventEntity) {
                 modifier = Modifier.fillMaxWidth().align(Alignment.BottomStart),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-
                 Text( text = event.title, style = MaterialTheme.typography.bodyMedium )
-
                 Text( text = event.startTime, style = MaterialTheme.typography.bodyLarge )
             }
         }
     }
 }
-
-data class Event(
-    val time: String,
-    val title: String,
-    val cardColor: Color
-)
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable

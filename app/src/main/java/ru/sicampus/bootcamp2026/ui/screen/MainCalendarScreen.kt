@@ -1,4 +1,4 @@
-package ru.sicampus.bootcamp2026
+package ru.sicampus.bootcamp2026.ui.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -33,7 +33,6 @@ import ru.sicampus.bootcamp2026.ui.theme.SineyIney
 import ru.sicampus.bootcamp2026.ui.theme.Yellow
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
@@ -82,6 +81,10 @@ private fun CalendarErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
             }
         }
     }
+}
+
+enum class CalendarViewMode {
+    DAY, WEEK, MONTH
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -682,43 +685,4 @@ fun CalendarScreenPreview() {
     ) {
         CalendarScreen()
     }
-}
-
-fun bdEvents(): List<CalendarEvent> {
-    val today = LocalDate.now()
-
-    return listOf(
-        CalendarEvent(
-            id = "1",
-            title = "Morning Meeting",
-            description = "Daily standup",
-            date = today,
-            startTime = LocalTime.of(9, 30),
-            endTime = LocalTime.of(10, 0)
-        ),
-        CalendarEvent(
-            id = "2",
-            title = "Lunch",
-            description = "",
-            date = today,
-            startTime = LocalTime.of(13, 0),
-            endTime = LocalTime.of(14, 0)
-        ),
-        CalendarEvent(
-            id = "3",
-            title = "Gym Session",
-            description = "",
-            date = today.plusDays(1),
-            startTime = LocalTime.of(18, 0),
-            endTime = LocalTime.of(19, 30)
-        ),
-        CalendarEvent(
-            id = "4",
-            title = "Dentist Appointment",
-            description = "Regular checkup",
-            date = today.plusDays(3),
-            startTime = LocalTime.of(11, 0),
-            endTime = LocalTime.of(12, 0)
-        )
-    )
 }
