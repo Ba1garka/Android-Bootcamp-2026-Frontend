@@ -2,17 +2,16 @@ package ru.sicampus.bootcamp2026.ui.screen.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.sicampus.bootcamp2026.data.EventRepository
-import ru.sicampus.bootcamp2026.data.source.UserInfoDataSource
-import ru.sicampus.bootcamp2026.domain.GetEventsUseCase
+import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
+import ru.sicampus.bootcamp2026.domain.home.GetEventsUseCase
 
 class HomeViewModel: ViewModel() {
     private val getEventsUseCase = GetEventsUseCase(
-        eventRepository = EventRepository(UserInfoDataSource())
+        eventRepository = EventRepository(EventInfoDataSource())
     )
     private val _uiState: MutableStateFlow<HomeState> = MutableStateFlow(HomeState.Loading)
     val uiState = _uiState.asStateFlow()

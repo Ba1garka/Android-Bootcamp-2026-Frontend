@@ -1,7 +1,5 @@
 package ru.sicampus.bootcamp2026.ui.screen.home
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,8 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.R
-import ru.sicampus.bootcamp2026.domain.entities.EventEntity
-import ru.sicampus.bootcamp2026.ui.theme.Black
+import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
@@ -212,7 +209,7 @@ fun EventCard(event: EventEntity) {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme(

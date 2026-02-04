@@ -1,15 +1,14 @@
 package ru.sicampus.bootcamp2026.data
 
-import android.provider.CalendarContract
-import ru.sicampus.bootcamp2026.data.source.UserInfoDataSource
-import ru.sicampus.bootcamp2026.domain.entities.EventEntity
-import ru.sicampus.bootcamp2026.domain.entities.ParticipantEntity
+import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
+import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
+import ru.sicampus.bootcamp2026.domain.home.entities.ParticipantEntity
 
 class EventRepository(
-    private val userInfoDataSource: UserInfoDataSource
+    private val eventInfoDataSource: EventInfoDataSource
 ) {
     suspend fun getEvents(): Result<List<EventEntity>>{
-        return userInfoDataSource.getEvents().map{ listDto ->
+        return eventInfoDataSource.getEvents().map{ listDto ->
             listDto.mapNotNull { eventDto ->
                 EventEntity(
                     title = eventDto.title ?: return@mapNotNull null,

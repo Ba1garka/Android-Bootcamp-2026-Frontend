@@ -22,3 +22,9 @@ val BluePrimary = Color(0xFFBFC8FF)
 val SineyIney = Color(0xFF6578F7)
 val Yellow = Color(0xFFFFCA1A)
 val Grey = Color(0x33D9D9D9)
+
+val containerColor = Color(0xFFE7E5E5)
+
+val textColor = Color(0xFF8C8C8C)
+
+val buttonTextColor = Color(0xFFFFFFFD)

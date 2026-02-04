@@ -10,7 +10,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ru.sicampus.bootcamp2026.domain.entities.EventEntity
+import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeState
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
@@ -184,7 +185,7 @@ private fun CalendarContentState( state: HomeState.Content ){
                             CalendarViewMode.MONTH -> selectedDate.value = selectedDate.value.plusMonths(1)
                         }
                     }
-                ) { Icon(Icons.Default.ArrowForward, contentDescription = "Next") }
+                ) { Icon(imageVector = Icons.Default.ArrowForward, contentDescription = "Next") }
             }
 
             // переходы по режимам

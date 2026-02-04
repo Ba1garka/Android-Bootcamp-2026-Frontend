@@ -1,4 +1,4 @@
-package ru.sicampus.bootcamp2026.domain.entities
+package ru.sicampus.bootcamp2026.domain.home.entities
 
 class ParticipantEntity(
     val fullName: String,

@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.MaterialTheme
-import ru.sicampus.bootcamp2026.ui.Navigation
+import ru.sicampus.bootcamp2026.ui.nav.Navigation
 import ru.sicampus.bootcamp2026.ui.theme.AndroidBootcamp2026FrontendTheme
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 

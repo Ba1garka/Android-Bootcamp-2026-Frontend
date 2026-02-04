@@ -1,4 +1,5 @@
-package ru.sicampus.bootcamp2026.ui
+package ru.sicampus.bootcamp2026.ui.nav
+
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,17 +25,21 @@ import androidx.navigation.compose.rememberNavController
 import ru.sicampus.bootcamp2026.ui.screen.CalendarScreen
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeScreen
 import ru.sicampus.bootcamp2026.R
+import ru.sicampus.bootcamp2026.ui.screen.auth.AuthScreen
+import ru.sicampus.bootcamp2026.ui.screen.register.RegistrationScreen
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     Box(modifier = Modifier.fillMaxSize()) {
 
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "register",
             modifier = Modifier.fillMaxSize()
         ) {
             composable("home") {
@@ -42,6 +47,31 @@ fun Navigation() {
             }
             composable("calendar") {
                 CalendarScreen()
+            }
+            composable("register") {
+                RegistrationScreen(
+                    navController = navController,
+                    onRegisterSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("auth") { inclusive = true }
+                        }
+                    },
+                    onLoginClick = {
+                        navController.navigate("auth"){
+                            popUpTo("auth") { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable("auth") {
+                AuthScreen(
+                    navController = navController,
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("auth") { inclusive = true }
+                        }
+                    }
+                )
             }
 //            composable("list") {
 //                ListScreen()
@@ -54,8 +84,15 @@ fun Navigation() {
 //            }
         }
 
-        BottomNavBar(navController = navController,
-            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter))
+        val showBottomBar = when (currentRoute) {
+            "home", "calendar", "profile" -> true
+            else -> false
+        }
+
+        if (showBottomBar) {
+            BottomNavBar(navController = navController,
+                modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter))
+        }
     }
 }
 
@@ -66,7 +103,7 @@ fun BottomNavBar(navController: NavController, modifier: Modifier = Modifier) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     Box(
-        modifier = modifier.padding(bottom = 15.dp),
+        modifier = modifier.padding(bottom = 25.dp),
         contentAlignment = Alignment.Center
     ) {
         Surface(
@@ -134,7 +171,7 @@ fun NavIcon(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme(

@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.sicampus.bootcamp2026.data.dto.EventDto
 
-class UserInfoDataSource {
+class EventInfoDataSource {
     suspend fun getEvents(): Result<List<EventDto>> = withContext(Dispatchers.IO) {
         runCatching {
             val result = Network.client.get("${Network.HOST}/api/meetings/user/3")

@@ -59,7 +59,7 @@ val CustomTypography = Typography(
 
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 16.sp
     ),
 

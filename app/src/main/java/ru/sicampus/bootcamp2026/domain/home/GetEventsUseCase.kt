@@ -1,7 +1,7 @@
-package ru.sicampus.bootcamp2026.domain
+package ru.sicampus.bootcamp2026.domain.home
 
 import ru.sicampus.bootcamp2026.data.EventRepository
-import ru.sicampus.bootcamp2026.domain.entities.EventEntity
+import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 
 class GetEventsUseCase(
     private val eventRepository: EventRepository

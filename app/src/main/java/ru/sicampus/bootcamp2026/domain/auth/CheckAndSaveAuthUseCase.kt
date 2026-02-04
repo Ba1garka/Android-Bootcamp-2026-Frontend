@@ -1,0 +1,13 @@
+package ru.sicampus.bootcamp2026.domain.auth
+
+import ru.sicampus.bootcamp2026.data.AuthRepository
+
+
+class CheckAndSaveAuthUseCase( private val authRepository: AuthRepository) {
+    suspend operator fun invoke(
+        login: String,
+        password: String,
+    ): Boolean {
+        return authRepository.checkAndAuth(login,password)
+    }
+}

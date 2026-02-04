@@ -1,6 +1,4 @@
-package ru.sicampus.bootcamp2026.domain.entities
-
-import kotlinx.serialization.SerialName
+package ru.sicampus.bootcamp2026.domain.home.entities
 
 
 class EventEntity (
