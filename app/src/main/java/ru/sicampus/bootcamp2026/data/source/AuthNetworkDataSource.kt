@@ -2,15 +2,12 @@ package ru.sicampus.bootcamp2026.data.source
 
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.sicampus.bootcamp2026.data.dto.RegisterDto
@@ -18,13 +15,17 @@ import ru.sicampus.bootcamp2026.data.dto.UserDto
 
 
 class AuthNetworkDataSource {
-    suspend fun checkAuth(token: String?): Boolean = withContext(Dispatchers.IO) {
+    suspend fun checkAuth(): Result<UserDto> = withContext(Dispatchers.IO) {
         runCatching {
             val result = Network.client.get("${Network.HOST}/api/auth/login") {
-                header(HttpHeaders.Authorization, token)
+                addAuthHeader()
             }
-            result.status == HttpStatusCode.OK
-        }.getOrElse { false }
+            if (result.status == HttpStatusCode.OK){
+                result.body<UserDto>()
+            } else {
+                throw Exception("Failed to get user profile: ${result.status}")
+            }
+        }
     }
 
     suspend fun register(

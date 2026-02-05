@@ -35,40 +35,44 @@ fun Navigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // TODO в отдельный Use Case
+//    val currentToken = runBlocking {AuthLocalDataSource.getToken()}
+//    if (currentToken == null ) RegisterRoute else HomeRoute
     Box(modifier = Modifier.fillMaxSize()) {
 
         NavHost(
             navController = navController,
-            startDestination = "register",
+            startDestination = RegisterRoute,
             modifier = Modifier.fillMaxSize()
         ) {
-            composable("home") {
+            composable<HomeRoute> {
                 HomeScreen()
             }
-            composable("calendar") {
+
+            composable<CalendarRoute> {
                 CalendarScreen()
             }
-            composable("register") {
+            composable<RegisterRoute> {
                 RegistrationScreen(
                     navController = navController,
                     onRegisterSuccess = {
-                        navController.navigate("home") {
-                            popUpTo("auth") { inclusive = true }
+                        navController.navigate(HomeRoute) {
+                            popUpTo(AuthRoute) { inclusive = true }
                         }
                     },
                     onLoginClick = {
-                        navController.navigate("auth"){
-                            popUpTo("auth") { inclusive = true }
+                        navController.navigate(AuthRoute){
+                            popUpTo(AuthRoute) { inclusive = true }
                         }
                     }
                 )
             }
-            composable("auth") {
+            composable<AuthRoute> {
                 AuthScreen(
                     navController = navController,
                     onLoginSuccess = {
-                        navController.navigate("home") {
-                            popUpTo("auth") { inclusive = true }
+                        navController.navigate(HomeRoute) {
+                            popUpTo(AuthRoute) { inclusive = true }
                         }
                     }
                 )
@@ -85,7 +89,9 @@ fun Navigation() {
         }
 
         val showBottomBar = when (currentRoute) {
-            "home", "calendar", "profile" -> true
+            "ru.sicampus.bootcamp2026.ui.nav.HomeRoute",
+            "ru.sicampus.bootcamp2026.ui.nav.CalendarRoute",
+            "ru.sicampus.bootcamp2026.ui.nav.ProfileRoute" -> true
             else -> false
         }
 
@@ -121,29 +127,29 @@ fun BottomNavBar(navController: NavController, modifier: Modifier = Modifier) {
 
                 NavIcon(
                     drawableId = R.drawable.home,
-                    isSelected = currentRoute == "home",
-                    onClick = { navController.navigate("home") }
+                    isSelected = currentRoute == HomeRoute.route,
+                    onClick = { navController.navigate(HomeRoute) }
                 )
                 NavIcon(
                     drawableId = R.drawable.calendar,
-                    isSelected = currentRoute == "calendar",
-                    onClick = { navController.navigate("calendar") }
+                    isSelected = currentRoute == CalendarRoute.route,
+                    onClick = { navController.navigate(CalendarRoute) }
                 )
 
                 NavIcon(
                     drawableId = R.drawable.list,
-                    isSelected = currentRoute == "list",
-                    onClick = { navController.navigate("list") }
+                    isSelected = currentRoute == ListRoute.route,
+                    onClick = { navController.navigate(ListRoute) }
                 )
                 NavIcon(
                     drawableId = R.drawable.add,
-                    isSelected = currentRoute == "add",
-                    onClick = { navController.navigate("add") }
+                    isSelected = currentRoute == AddRoute.route,
+                    onClick = { navController.navigate(AddRoute) }
                 )
                 NavIcon(
                     drawableId = R.drawable.person,
-                    isSelected = currentRoute == "profile",
-                    onClick = { navController.navigate("profile") }
+                    isSelected = currentRoute == ProfileRoute.route,
+                    onClick = { navController.navigate(ProfileRoute) }
                 )
             }
         }

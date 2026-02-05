@@ -2,8 +2,10 @@ package ru.sicampus.bootcamp2026.ui.screen.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -12,14 +14,15 @@ import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
 import ru.sicampus.bootcamp2026.domain.auth.CheckAndSaveAuthUseCase
 import ru.sicampus.bootcamp2026.domain.auth.CheckAuthFormatUseCase
+import ru.sicampus.bootcamp2026.ui.nav.HomeRoute
 
 class AuthViewModel : ViewModel() {
     private val checkAuthFormatUseCase by lazy { CheckAuthFormatUseCase() }
     private val checkAndSaveAuthCodeUseCase by lazy {
         CheckAndSaveAuthUseCase(
             AuthRepository(
-                authNetworkDataSourse = AuthNetworkDataSource(),
-                authLocalDataSourse = AuthLocalDataSource
+                authNetworkDataSource = AuthNetworkDataSource(),
+                authLocalDataSource = AuthLocalDataSource
             )
         )
     }
@@ -30,26 +33,31 @@ class AuthViewModel : ViewModel() {
         )
     )
     val uiState: StateFlow<AuthState> = _uiState.asStateFlow()
-    private val _authSuccess = MutableStateFlow(false)
-    val authSuccess = _authSuccess.asStateFlow()
+
+    private val _actionFlow : MutableSharedFlow<AuthAction> = MutableSharedFlow()
+
+    val actionFlow = _actionFlow.asSharedFlow()
+
     fun onIntent(intent: AuthIntent) {
         when (intent) {
             is AuthIntent.Send -> {
+                println("AuthViewModel: Send intent with login: ${intent.login}")
                 viewModelScope.launch {
-                    val authCompleted = checkAndSaveAuthCodeUseCase.invoke(intent.login, intent.password)
-                    if (authCompleted) {
-                        _authSuccess.value = true
-                        _uiState.value = AuthState.Data(
-                            isEnabledSend = false,
-                            error = null
-                        )
-                    } else {
-                        updateStateIfData { oldState ->
-                            oldState.copy(
-                                error = "Auth not completed"
-                            )
+                    checkAndSaveAuthCodeUseCase.invoke(intent.login, intent.password).fold(
+                        onSuccess = { userDto ->
+                            println("AuthViewModel: Auth successful")
+                            AuthLocalDataSource.saveUser(userDto)
+                            _actionFlow.emit(AuthAction.OpenScreen(HomeRoute))
+                        },
+                        onFailure = { error ->
+                            println("AuthViewModel: Auth failed: ${error.message}")
+                            updateStateIfData { oldState ->
+                                oldState.copy(
+                                    error = error.message
+                                )
+                            }
                         }
-                    }
+                    )
                 }
             }
             is AuthIntent.TextInput -> {
@@ -71,9 +79,5 @@ class AuthViewModel : ViewModel() {
             (state as? AuthState.Data)?.let { lambda.invoke(it) } ?: state
         }
 
-    }
-
-    fun resetAuthSuccess() {
-        _authSuccess.value = false
     }
 }

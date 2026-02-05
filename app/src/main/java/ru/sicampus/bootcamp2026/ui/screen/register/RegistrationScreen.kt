@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import ru.sicampus.bootcamp2026.data.dto.UserDto
+import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.ui.theme.*
 
 
@@ -57,6 +59,15 @@ fun RegistrationScreen(navController: NavController, onRegisterSuccess: () -> Un
 
     LaunchedEffect(state) {
         if (state is RegisterState.Content) {
+            val userEntity = (state as RegisterState.Content).user
+
+            val userDto = UserDto(
+                id = userEntity.id,
+                email = userEntity.email,
+                fullName = userEntity.fullName
+            )
+
+            AuthLocalDataSource.saveUser(userDto)
             onRegisterSuccess()
         }
     }

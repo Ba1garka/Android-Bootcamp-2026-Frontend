@@ -43,6 +43,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import kotlinx.coroutines.coroutineScope
+import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
 import ru.sicampus.bootcamp2026.ui.theme.Black
 import ru.sicampus.bootcamp2026.ui.theme.Montserrat
 import ru.sicampus.bootcamp2026.ui.theme.SineyIney
@@ -57,6 +59,14 @@ fun AuthScreen(
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.actionFlow.collect { action ->
+            when(action){
+                is AuthAction.OpenScreen -> navController.navigate(action.route)
+            }
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(start = 32.dp, end = 32.dp, top = 96.dp, bottom = 48.dp),
@@ -93,31 +103,20 @@ private fun Content(
     var inputPassword by remember { mutableStateOf("") }
     val focusPasswordRequester = remember { FocusRequester() }
 
-    val authSuccess by viewModel.authSuccess.collectAsState()
-
-
-    LaunchedEffect(authSuccess) {
-        if (authSuccess) {
-            onLoginSuccess()
-            viewModel.resetAuthSuccess()
-        }
-    }
-
     Spacer(modifier = Modifier.size(16.dp))
     Column() {
         TextField(
             modifier = Modifier
-                .focusRequester(focusPasswordRequester)
                 .fillMaxWidth()
                 .height(51.dp),
             value = inputLogin,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Done
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
-                onDone = {
-                    viewModel.onIntent(AuthIntent.Send(inputLogin, inputPassword))
+                onNext = {
+                    focusPasswordRequester.requestFocus()
                 }
             ),
             onValueChange = {
@@ -170,7 +169,6 @@ private fun Content(
             onClick = {
                 viewModel.onIntent(AuthIntent.Send(inputLogin, inputPassword))
             },
-            enabled = state.isEnabledSend,
             colors = ButtonDefaults.buttonColors(
                 containerColor = SineyIney,
                 disabledContainerColor = SineyIney//.copy(alpha = 0.38f),
@@ -186,6 +184,8 @@ private fun Content(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+
+
 
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -206,7 +206,7 @@ private fun Content(
                 color = SineyIney,
                 fontFamily = FontFamily.Default,
                 modifier = Modifier.clickable {
-                navController.navigate("register")
+                    navController.navigate("register")
                 }
             )
         }

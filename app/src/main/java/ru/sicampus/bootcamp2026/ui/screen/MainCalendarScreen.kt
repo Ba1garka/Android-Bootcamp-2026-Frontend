@@ -95,7 +95,6 @@ private fun CalendarContentState( state: HomeState.Content ){
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
 
     val events = remember { state.events }
-
     Scaffold(
         topBar = {
             TopAppBar(

@@ -10,7 +10,17 @@ import ru.sicampus.bootcamp2026.data.dto.EventDto
 class EventInfoDataSource {
     suspend fun getEvents(): Result<List<EventDto>> = withContext(Dispatchers.IO) {
         runCatching {
-            val result = Network.client.get("${Network.HOST}/api/meetings/user/3")
+            val currentUser = AuthLocalDataSource.getCurrentUser()
+
+            if (currentUser == null || currentUser.id == null) {
+                throw Exception("Пользователь не авторизован")
+            }
+
+            val userId = currentUser.id
+
+            val result = Network.client.get("${Network.HOST}/api/meetings/user/$userId"){
+                addAuthHeader()
+            }
             if (result.status != HttpStatusCode.OK){
                 error("Status: ${result.status}")
             }

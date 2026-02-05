@@ -12,8 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,6 +28,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.R
+import ru.sicampus.bootcamp2026.data.dto.UserDto
+import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
@@ -34,13 +40,18 @@ import java.time.LocalDate
 
 @Composable
 fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
+    val user = remember { mutableStateOf<UserDto?>(null) }
+
+    LaunchedEffect(Unit) {
+        user.value = AuthLocalDataSource.getCurrentUser()
+    }
 
     val state by viewModel.uiState.collectAsState()
 
     when(val currentState = state){
         is HomeState.Error -> HomeErrorState(currentState, onRefresh = { viewModel.getData() })
         is HomeState.Loading -> HomeLoadingState()
-        is HomeState.Content -> HomeContentState(currentState)
+        is HomeState.Content -> HomeContentState(currentState, user)
     }
 
 }
@@ -77,7 +88,7 @@ private  fun HomeErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
 }
 
 @Composable
-private fun HomeContentState( state: HomeState.Content ){
+private fun HomeContentState(state: HomeState.Content, user: MutableState<UserDto?>){
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -108,9 +119,10 @@ private fun HomeContentState( state: HomeState.Content ){
                         )
                     }
 
+                    val name = user.value?.fullName ?: "Ивана"
                     Column() {
                         Text( text = "привет,", style = MaterialTheme.typography.displaySmall )
-                        Text( text = "Ивана", style = MaterialTheme.typography.displayMedium )
+                        Text( text = name, style = MaterialTheme.typography.displayMedium )
                     }
                 }
 

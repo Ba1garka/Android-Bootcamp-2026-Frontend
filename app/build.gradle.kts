@@ -67,6 +67,10 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.9.7")
     implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.compose.runtime)
+
+    implementation(libs.datastore)
+    implementation(libs.datastore.preferences)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
