@@ -23,7 +23,7 @@ class AuthNetworkDataSource {
             if (result.status == HttpStatusCode.OK){
                 result.body<UserDto>()
             } else {
-                throw Exception("Failed to get user profile: ${result.status}")
+                throw Exception("Ошибка получения профиля: ${result.status}")
             }
         }
     }
@@ -46,7 +46,7 @@ class AuthNetworkDataSource {
             }
             if (result.status == HttpStatusCode.Conflict){
                 val errorBody = result.bodyAsText()
-                println("User already exists. Response: $errorBody")
+                println("Пользователь уже существует. Ответ: $errorBody")
                 throw Exception("Пользователь с email $email уже существует")
             }
             result.body<UserDto>()

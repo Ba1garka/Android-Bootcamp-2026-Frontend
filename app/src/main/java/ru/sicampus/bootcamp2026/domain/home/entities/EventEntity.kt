@@ -2,6 +2,7 @@ package ru.sicampus.bootcamp2026.domain.home.entities
 
 
 class EventEntity (
+    val id : Int,
     val title: String,
     val description: String,
     val organizerName: String,

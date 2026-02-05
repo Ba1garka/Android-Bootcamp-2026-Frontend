@@ -28,3 +28,15 @@ val containerColor = Color(0xFFE7E5E5)
 val textColor = Color(0xFF8C8C8C)
 
 val buttonTextColor = Color(0xFFFFFFFD)
+
+
+val SoftWhite = Color(0xFFFFFFFD)
+val LightGray = Color(0xFFE7E5E5)
+val MediumGray = Color(0xFFD9D9D9)
+val DarkGrey = Color(0xFF8C8C8C)
+val VeryDarkGrey = Color(0xFF979797)
+
+val Black50 = Black.copy(alpha = 0.5f)
+
+val Red = Color(0xFFC33636)
+val Green = Color(0xFFABC45D)

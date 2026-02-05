@@ -1,8 +1,12 @@
 package ru.sicampus.bootcamp2026.data
 
+import ru.sicampus.bootcamp2026.data.dto.EventDto
+import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.domain.home.entities.ParticipantEntity
+import ru.sicampus.bootcamp2026.domain.home.entities.UserEntity
+import kotlin.collections.mapNotNull
 
 class EventRepository(
     private val eventInfoDataSource: EventInfoDataSource
@@ -11,6 +15,7 @@ class EventRepository(
         return eventInfoDataSource.getEvents().map{ listDto ->
             listDto.mapNotNull { eventDto ->
                 EventEntity(
+                    id = eventDto.id ?: return@mapNotNull null,
                     title = eventDto.title ?: return@mapNotNull null,
                     description = eventDto.description ?: return@mapNotNull null,
                     organizerName = eventDto.organizerName ?: return@mapNotNull null,
@@ -26,5 +31,35 @@ class EventRepository(
                 )
             }
         }
+    }
+
+    suspend fun getInvitations(): Result<List<EventEntity>>{
+        return eventInfoDataSource.getInvitations().map{ listDto ->
+            listDto.mapNotNull { eventDto ->
+                EventEntity(
+                    id = eventDto.id ?: return@mapNotNull null,
+                    title = eventDto.title ?: return@mapNotNull null,
+                    description = eventDto.description ?: return@mapNotNull null,
+                    organizerName = eventDto.organizerName ?: return@mapNotNull null,
+                    date = eventDto.date ?: return@mapNotNull null,
+                    startTime = eventDto.startTime ?: return@mapNotNull null,
+                    endTime = eventDto.endTime ?: return@mapNotNull null,
+                    participants = eventDto.participants?.map { participantDto ->
+                        ParticipantEntity(
+                            fullName = participantDto.fullName ?: return@mapNotNull null,
+                            status = participantDto.status ?: return@mapNotNull null
+                        )
+                    } ?: emptyList()
+                )
+            }
+        }
+    }
+
+    suspend fun changeInv(
+        meetingId: Int,
+        userId: Int,
+        response: Boolean
+    ): Result<Unit> {
+        return eventInfoDataSource.changeInvitations(meetingId, userId,response)
     }
 }

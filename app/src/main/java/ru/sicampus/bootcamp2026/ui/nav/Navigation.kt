@@ -26,6 +26,7 @@ import ru.sicampus.bootcamp2026.ui.screen.CalendarScreen
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeScreen
 import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.ui.screen.auth.AuthScreen
+import ru.sicampus.bootcamp2026.ui.screen.list.ListScreen
 import ru.sicampus.bootcamp2026.ui.screen.register.RegistrationScreen
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 
@@ -77,9 +78,9 @@ fun Navigation() {
                     }
                 )
             }
-//            composable("list") {
-//                ListScreen()
-//            }
+            composable<ListRoute> {
+                ListScreen()
+            }
 //            composable("add") {
 //                AddScreen()
 //            }
@@ -91,7 +92,8 @@ fun Navigation() {
         val showBottomBar = when (currentRoute) {
             "ru.sicampus.bootcamp2026.ui.nav.HomeRoute",
             "ru.sicampus.bootcamp2026.ui.nav.CalendarRoute",
-            "ru.sicampus.bootcamp2026.ui.nav.ProfileRoute" -> true
+            "ru.sicampus.bootcamp2026.ui.nav.ProfileRoute",
+            "ru.sicampus.bootcamp2026.ui.nav.ListRoute" -> true
             else -> false
         }
 
