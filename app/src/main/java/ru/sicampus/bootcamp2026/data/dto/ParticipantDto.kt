@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ParticipantDto(
     @SerialName("id")
-    val id: Long,
+    val id: Int,
 
     @SerialName("fullName")
     val fullName: String,

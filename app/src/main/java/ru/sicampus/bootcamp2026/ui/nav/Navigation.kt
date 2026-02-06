@@ -5,15 +5,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import ru.sicampus.bootcamp2026.ui.theme.Black
@@ -22,13 +21,15 @@ import ru.sicampus.bootcamp2026.ui.theme.Grey
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import ru.sicampus.bootcamp2026.ui.screen.CalendarScreen
+import ru.sicampus.bootcamp2026.ui.screen.calendar.CalendarScreen
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeScreen
 import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.ui.screen.auth.AuthScreen
+import ru.sicampus.bootcamp2026.ui.screen.add.AddScreen
+import ru.sicampus.bootcamp2026.ui.screen.details.MeetingDetailScreen
+import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.screen.list.ListScreen
 import ru.sicampus.bootcamp2026.ui.screen.register.RegistrationScreen
-import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 
 @Composable
 fun Navigation() {
@@ -36,6 +37,7 @@ fun Navigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val homeViewModel: HomeViewModel = viewModel()
     // TODO в отдельный Use Case
 //    val currentToken = runBlocking {AuthLocalDataSource.getToken()}
 //    if (currentToken == null ) RegisterRoute else HomeRoute
@@ -47,7 +49,12 @@ fun Navigation() {
             modifier = Modifier.fillMaxSize()
         ) {
             composable<HomeRoute> {
-                HomeScreen()
+                HomeScreen(
+                    viewModel = homeViewModel,
+                    onDetailClick = {
+                        navController.navigate(DetailsRoute)
+                    }
+                )
             }
 
             composable<CalendarRoute> {
@@ -81,9 +88,21 @@ fun Navigation() {
             composable<ListRoute> {
                 ListScreen()
             }
-//            composable("add") {
-//                AddScreen()
-//            }
+            composable<DetailsRoute> {
+                MeetingDetailScreen(
+                    viewModel = homeViewModel,
+                    onReturnToHome = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable<AddRoute> {
+                AddScreen(
+                    onReturnBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
 //            composable("profile") {
 //                ProfileScreen()
 //            }
@@ -176,15 +195,5 @@ fun NavIcon(
             tint = if (isSelected) Black else BlackIcon,
             modifier = Modifier.size(24.dp)
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme(
-        typography = CustomTypography
-    ) {
-        Navigation()
     }
 }

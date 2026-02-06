@@ -37,9 +37,10 @@ import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Grey
 import ru.sicampus.bootcamp2026.ui.theme.Yellow
 import java.time.LocalDate
+import kotlin.Unit
 
 @Composable
-fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
+fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ,onDetailClick: () -> Unit) {
     val user = remember { mutableStateOf<UserDto?>(null) }
 
     LaunchedEffect(Unit) {
@@ -51,7 +52,7 @@ fun HomeScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>() ) {
     when(val currentState = state){
         is HomeState.Error -> HomeErrorState(currentState, onRefresh = { viewModel.getData() })
         is HomeState.Loading -> HomeLoadingState()
-        is HomeState.Content -> HomeContentState(currentState, user)
+        is HomeState.Content -> HomeContentState(currentState, user, onDetailClick, viewModel)
     }
 
 }
@@ -88,7 +89,12 @@ private  fun HomeErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
 }
 
 @Composable
-private fun HomeContentState(state: HomeState.Content, user: MutableState<UserDto?>){
+private fun HomeContentState(
+    state: HomeState.Content,
+    user: MutableState<UserDto?>,
+    onDetailClick: () -> Unit,
+    viewModel: HomeViewModel
+){
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -172,7 +178,7 @@ private fun HomeContentState(state: HomeState.Content, user: MutableState<UserDt
             ) {
                 items(state.events) { event ->
                     if (event.date == LocalDate.now().toString()){
-                        EventCard(event = event)
+                        EventCard(event = event, onDetailClick, viewModel)
                     }
 
                 }
@@ -184,7 +190,7 @@ private fun HomeContentState(state: HomeState.Content, user: MutableState<UserDt
 
 
 @Composable
-fun EventCard(event: EventEntity) {
+fun EventCard(event: EventEntity, onDetailClick: () -> Unit, viewModel: HomeViewModel) {
     Card(
         modifier = Modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors(
@@ -198,7 +204,11 @@ fun EventCard(event: EventEntity) {
         ) {
 
             IconButton(
-                onClick = { },
+                onClick = {
+                    viewModel.selectEvent(event)
+                    viewModel.getData()
+                    onDetailClick()
+                },
                 modifier = Modifier.size(32.dp).align(Alignment.TopEnd)
             ){
                 Icon(
@@ -221,13 +231,13 @@ fun EventCard(event: EventEntity) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    MaterialTheme(
-        typography = CustomTypography
-    ) {
-        HomeScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun HomeScreenPreview() {
+//    MaterialTheme(
+//        typography = CustomTypography
+//    ) {
+//        HomeScreen()
+//    }
+//}
 

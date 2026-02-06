@@ -1,4 +1,4 @@
-package ru.sicampus.bootcamp2026.ui.screen
+package ru.sicampus.bootcamp2026.ui.screen.calendar
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,6 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ru.sicampus.bootcamp2026.data.dto.UserDto
+import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeState
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
@@ -43,12 +45,18 @@ import kotlin.text.substring
 @Composable
 fun CalendarScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>()) {
 
+    val user = remember { mutableStateOf<UserDto?>(null) }
+
+    LaunchedEffect(Unit) {
+        user.value = AuthLocalDataSource.getCurrentUser()
+    }
+
     val state by viewModel.uiState.collectAsState()
 
     when(val currentState = state){
         is HomeState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
         is HomeState.Loading -> CalendarLoadingState()
-        is HomeState.Content -> CalendarContentState(currentState)
+        is HomeState.Content -> CalendarContentState(currentState, user)
     }
 
 }
@@ -90,11 +98,17 @@ enum class CalendarViewMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarContentState( state: HomeState.Content ){
+private fun CalendarContentState( state: HomeState.Content , user: MutableState<UserDto?>){
     val selectedDate = remember { mutableStateOf(LocalDate.now()) }
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
 
-    val events = remember { state.events }
+
+    val events = remember { state.events.filter { event ->
+        event.participants.any { participant ->
+            participant.status == "Принято" && participant.fullName == user.value?.fullName
+        }
+    }
+    }
     Scaffold(
         topBar = {
             TopAppBar(

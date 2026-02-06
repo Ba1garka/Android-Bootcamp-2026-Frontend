@@ -43,6 +43,7 @@ import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
+import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Green
 import ru.sicampus.bootcamp2026.ui.theme.MediumGray
@@ -124,14 +125,16 @@ private fun ListContentState(viewModel: ListViewModel, state: ListState.Content,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(state.invitations) { item ->
-                InvitationCard(viewModel, item = item, user)
+                InvitationCard(viewModel, item = item, user, onCardClick = {
+                    //TODO переход на detail screen
+                })
             }
         }
     }
 }
 
 @Composable
-fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableState<UserDto?>) {
+fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableState<UserDto?>, onCardClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,6 +148,7 @@ fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableSt
                 horizontal = 10.dp,
                 vertical = 16.dp
             )
+            .clickable { onCardClick() }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -198,7 +202,6 @@ fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableSt
                     )
                 }
             }
-
             // Кнопки принятия/отклонения
             Row(
                 horizontalArrangement = Arrangement.End,

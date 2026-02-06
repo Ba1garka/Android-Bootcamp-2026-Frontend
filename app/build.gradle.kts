@@ -71,6 +71,8 @@ dependencies {
 
     implementation(libs.datastore)
     implementation(libs.datastore.preferences)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.compose.ui.test)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

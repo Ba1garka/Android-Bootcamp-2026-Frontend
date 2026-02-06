@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import ru.sicampus.bootcamp2026.data.UserRepository
 import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
 import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
+import ru.sicampus.bootcamp2026.data.source.UserInfoDataSource
 import ru.sicampus.bootcamp2026.domain.home.GetEventsUseCase
 import ru.sicampus.bootcamp2026.domain.register.RegisterUseCase
 
@@ -15,7 +16,7 @@ import ru.sicampus.bootcamp2026.domain.register.RegisterUseCase
 
 class RegisterViewModel: ViewModel() {
     private val registerUseCase = RegisterUseCase(
-        userRepository = UserRepository(AuthNetworkDataSource())
+        userRepository = UserRepository(AuthNetworkDataSource(), UserInfoDataSource())
     )
     private val _uiState: MutableStateFlow<RegisterState> = MutableStateFlow(RegisterState.Initial)
     val uiState = _uiState.asStateFlow()

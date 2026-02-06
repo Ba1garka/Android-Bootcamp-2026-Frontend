@@ -24,6 +24,7 @@ class EventRepository(
                     endTime = eventDto.endTime ?: return@mapNotNull null,
                     participants = eventDto.participants?.map { participantDto ->
                         ParticipantEntity(
+                            id = participantDto.id ?: return@mapNotNull null,
                             fullName = participantDto.fullName ?: return@mapNotNull null,
                             status = participantDto.status ?: return@mapNotNull null
                         )
@@ -46,6 +47,7 @@ class EventRepository(
                     endTime = eventDto.endTime ?: return@mapNotNull null,
                     participants = eventDto.participants?.map { participantDto ->
                         ParticipantEntity(
+                            id = participantDto.id ?: return@mapNotNull null,
                             fullName = participantDto.fullName ?: return@mapNotNull null,
                             status = participantDto.status ?: return@mapNotNull null
                         )
