@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.datastore.preferences)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.compose.ui.test)
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.7")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -6,6 +6,7 @@ import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.domain.home.entities.ParticipantEntity
 import ru.sicampus.bootcamp2026.domain.home.entities.UserEntity
+import kotlin.Int
 import kotlin.collections.mapNotNull
 
 class EventRepository(
@@ -63,5 +64,25 @@ class EventRepository(
         response: Boolean
     ): Result<Unit> {
         return eventInfoDataSource.changeInvitations(meetingId, userId,response)
+    }
+
+    suspend fun createEvent(
+        organizerId: Int,
+        title: String,
+        description: String,
+        date: String,
+        startTime: String,
+        endTime: String,
+        participantsId: List<Int>
+    ): Result<Unit>{
+        return eventInfoDataSource.createEvent(
+            organizerId = organizerId,
+            title = title,
+            description = description,
+            date = date,
+            startTime = startTime,
+            endTime = endTime,
+            participantsId = participantsId
+        )
     }
 }

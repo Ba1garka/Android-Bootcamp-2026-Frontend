@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateSet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
-import ru.sicampus.bootcamp2026.domain.add.entities.TimeSlot
+import ru.sicampus.bootcamp2026.domain.add.entities.TimeSlotEntity
 import ru.sicampus.bootcamp2026.domain.home.entities.UserEntity
 import ru.sicampus.bootcamp2026.ui.theme.*
 import java.time.Instant
@@ -38,19 +37,34 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddScreen(onReturnBack: () -> Unit, viewModel: AddViewModel = viewModel()) {
+fun AddScreen(onReturnBack: () -> Unit, viewModel: AddViewModel = viewModel(), ) {
     val user = remember { mutableStateOf<UserDto?>(null) }
 
     LaunchedEffect(Unit) {
         user.value = AuthLocalDataSource.getCurrentUser()
     }
 
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+
     val state by viewModel.uiState.collectAsState()
 
     when(val currentState = state){
-        is AddState.Error -> AddErrorState(currentState, onRefresh = { viewModel.getData() })
+        is AddState.Error -> AddErrorState(
+            currentState,
+            onRefresh = {
+                viewModel.onIntent(AddIntent.Refresh)
+            })
         is AddState.Loading -> AddLoadingState()
-        is AddState.Content -> AddContentState(currentState, user, viewModel, onReturnBack, onRefresh = { viewModel.getData() })
+        is AddState.Content -> AddContentState(
+            currentState,
+            user,
+            viewModel,
+            onReturnBack,
+            selectedDate = selectedDate,
+            onDateChange = { newDate -> selectedDate = newDate },
+            onRefresh = { viewModel.onIntent(AddIntent.Refresh) },
+            onLoadMore = { viewModel.onIntent(AddIntent.LoadMore) }
+        )
     }
 
 }
@@ -93,49 +107,52 @@ private fun AddContentState(
     user: MutableState<UserDto?>,
     viewModel: AddViewModel,
     onReturnBack: () -> Unit,
+    selectedDate: LocalDate?,
+    onDateChange: (LocalDate?) -> Unit,
     onRefresh: () -> Unit,
-    onLoadMore: () -> Unit
+    onLoadMore: () -> Unit,
+
 ){
-    var meetingTitle by remember { mutableStateOf(TextFieldValue()) }
-    var meetingDescription by remember { mutableStateOf(TextFieldValue()) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var selectedTimeSlot by remember { mutableStateOf<TimeSlot?>(null) }
-    val selectedParticipantIds = remember { mutableStateSetOf<Int>() }
+    val organizerId = user.value?.id
+    var selectedTimeSlot by remember { mutableStateOf<TimeSlotEntity?>(null) }
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTimeSlots by remember { mutableStateOf(false) }
     var showParticipantsPicker by remember { mutableStateOf(false) }
-
+    var showTimeSlots by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var meetingDescription by remember { mutableStateOf(TextFieldValue()) }
+    var meetingTitle by remember { mutableStateOf(TextFieldValue()) }
+    var selectedParticipantIds by remember { mutableStateOf(listOf<Int>()) }
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
     ) // для кастомного data pickera
 
-    val timeSlots = remember { //TODO получаем из отдельного запроса
-        listOf(
-            TimeSlot(1, "09:00"),
-            TimeSlot(2, "10:00"),
-            TimeSlot(3, "11:00"),
-            TimeSlot(4, "12:00"),
-            TimeSlot(5, "13:00"),
-            TimeSlot(6, "14:00"),
-            TimeSlot(7, "15:00"),
-            TimeSlot(8, "16:00"),
-            TimeSlot(9, "17:00"),
-            TimeSlot(10, "18:00")
-        )
+
+    val timeSlotsState by viewModel.timeSlotsState.collectAsState()
+//    val createState by viewModel.createState.collectAsState()
+
+    LaunchedEffect(selectedDate) {
+        selectedDate?.let { date ->
+            viewModel.getTime(date.toString())
+        }
     }
 
     var participants by remember { mutableStateOf( state.users ) }
     //var participants by remember(state.users) { mutableStateOf( state.users ) }
 
-
-    val userEntities = remember(participants) {
-        participants.filterIsInstance<AddState.Item.User>().map { it.entity }
+    val toggleParticipant: (Int) -> Unit = remember {
+        { userId ->
+            selectedParticipantIds = if (selectedParticipantIds.contains(userId)) {
+                selectedParticipantIds - userId
+            } else {
+                selectedParticipantIds + userId
+            }
+        }
     }
 
-    val selectedParticipants = remember(userEntities, selectedParticipantIds) {
-        userEntities.filter { it.id in selectedParticipantIds }
+    val selectedParticipants = remember(state.users, selectedParticipantIds) {
+        state.users.filterIsInstance<AddState.Item.User>().map { it.entity }
+            .filter { it.id in selectedParticipantIds }
     }
 
     val lazyColumnListState = rememberLazyListState()
@@ -147,8 +164,8 @@ private fun AddContentState(
         }
     }
 
-    LaunchedEffect(isNeededLoadMore) {
-        if(isNeededLoadMore){
+    LaunchedEffect(isNeededLoadMore, state.isLastPage) {
+        if(isNeededLoadMore && !state.isLastPage){
             onLoadMore.invoke()
         }
     }
@@ -188,7 +205,15 @@ private fun AddContentState(
 
                 IconButton(
                     onClick = {
-                        // TODO: Сохранение встречи в БД
+                        viewModel.createEvent(
+                            organizerId!!,
+                            meetingTitle,
+                            meetingDescription,
+                            selectedDate.toString(),
+                            selectedTimeSlot?.startTime ?: "00:00:00",
+                            selectedTimeSlot?.endTime ?: "00:00:00",
+                            selectedParticipantIds
+                        )
                     },
                     modifier = Modifier.size(40.dp)
                 ) {
@@ -333,7 +358,7 @@ private fun AddContentState(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = selectedTimeSlot?.time ?: "выбрать доступный слот",
+                        text = selectedTimeSlot?.startTime ?: "выбрать доступный слот",
                         style = CustomTypography.labelMedium,
                         color = if (selectedTimeSlot == null) VeryDarkGrey else Color.Black
                     )
@@ -432,7 +457,7 @@ private fun AddContentState(
 
                                     IconButton(
                                         onClick = {
-                                            selectedParticipantIds.remove(item.id)
+                                            selectedParticipantIds = selectedParticipantIds - item.id
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
@@ -463,37 +488,72 @@ private fun AddContentState(
             )
         }
 
-        // dropdown для выбора времени
         if (showTimeSlots) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .align(Alignment.TopCenter)
-                    .padding(top = 300.dp, start = 16.dp, end = 16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .clip(RoundedCornerShape(30.dp))
-                        .border(width = 1.dp, color = MediumGray, shape = RoundedCornerShape(30.dp))
-                        .background(Color.White)
-                ) {
-                    LazyColumn(
-                        modifier = Modifier.height(300.dp)
+            when (val timeState = timeSlotsState) {
+                is SlotsState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .align(Alignment.TopCenter)
+                            .padding(top = 300.dp)
                     ) {
-                        items(timeSlots) { slot ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp)
-                                    .clickable {
-                                        selectedTimeSlot = slot
-                                        showTimeSlots = false
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                        Text("выберите дату")
+                    }
+                }
+
+                is SlotsState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .align(Alignment.TopCenter)
+                            .padding(top = 300.dp)
+                    ) {
+                        Column {
+                            Text(timeState.reason)
+                            Button(onClick = {
+                                selectedDate?.let { viewModel.getTime(it.toString()) }
+                            }) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+
+                is SlotsState.Content -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .align(Alignment.TopCenter)
+                            .padding(top = 300.dp, start = 16.dp, end = 16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .clip(RoundedCornerShape(30.dp))
+                                .border(width = 1.dp, color = MediumGray, shape = RoundedCornerShape(30.dp))
+                                .background(Color.White)
+                        ) {
+                            LazyColumn(modifier = Modifier.height(300.dp)) {
+                                items(timeState.timeSlots) { slot ->
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                                            .clickable {
+                                                selectedTimeSlot = slot
+                                                showTimeSlots = false
+                                            }
+                                    ) {
+                                        Text(text = slot.startTime, style = CustomTypography.labelMedium, color = Black)
                                     }
-                            ) {
-                                Text(text = slot.time, style = CustomTypography.labelMedium, color = Black)
+                                }
                             }
                         }
                     }
@@ -523,7 +583,10 @@ private fun AddContentState(
                             when(item){
                                 is AddState.Item.Error -> ItemError( onRefresh )
                                 is AddState.Item.Loading -> ItemLoading()
-                                is AddState.Item.User -> ItemUser(item.entity, selectedParticipantIds)
+                                is AddState.Item.User -> ItemUser(
+                                    user = item.entity,
+                                    isSelected =  selectedParticipantIds.contains(item.entity.id),
+                                    onToggle = { toggleParticipant(item.entity.id) })
                             }
                         }
                     }
@@ -557,9 +620,10 @@ private fun AddContentState(
                     TextButton(
                         onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
-                                selectedDate = Instant.ofEpochMilli(millis)
+                                val newDate = Instant.ofEpochMilli(millis)
                                     .atZone(ZoneId.systemDefault())
                                     .toLocalDate()
+                                onDateChange(newDate)
                             }
                             showDatePicker = false
                         }
@@ -583,9 +647,8 @@ private fun AddContentState(
         }
     }
 }
-
 @Composable
-private  fun ItemError( onRefresh: () -> Unit ){
+private fun ItemError( onRefresh: () -> Unit ){
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -616,47 +679,33 @@ private fun ItemLoading(){
 @Composable
 private fun ItemUser(
     user: UserEntity,
-    selectedParticipantIds: SnapshotStateSet<Int>
-){
+    isSelected: Boolean,
+    onToggle: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clickable {
-                // При клике на строку переключаем выбор
-                if (selectedParticipantIds.contains(user.id)) {
-                    selectedParticipantIds.remove(user.id)
-                } else {
-                    selectedParticipantIds.add(user.id)
-                }
-            },
+            .clickable { onToggle() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // чекбокс
+        // Чекбокс
         Box(
             modifier = Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .border(
                     width = 1.dp,
-                    color = if (selectedParticipantIds.contains(user.id)) Black else MediumGray,
+                    color = if (isSelected) Black else MediumGray,
                     shape = RoundedCornerShape(4.dp)
                 )
                 .background(
-                    if (selectedParticipantIds.contains(user.id)) Black else Color.White
+                    if (isSelected) Black else Color.White
                 )
-                .clickable(
-                    onClick = {
-                        if (selectedParticipantIds.contains(user.id)) {
-                            selectedParticipantIds.remove(user.id)
-                        } else {
-                            selectedParticipantIds.add(user.id)
-                        }
-                    }
-                ),
+                .clickable { onToggle() },
             contentAlignment = Alignment.Center
         ) {
-            if (selectedParticipantIds.contains(user.id)) {
+            if (isSelected) {
                 Icon(
                     painter = painterResource(id = R.drawable.check),
                     contentDescription = "Выбрано",

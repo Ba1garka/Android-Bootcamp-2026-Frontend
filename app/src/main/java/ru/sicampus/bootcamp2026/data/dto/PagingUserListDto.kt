@@ -6,5 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PagingUserListDto(
     @SerialName("content")
-    val content: List<UserDto>? = null
+    val content: List<UserDto>? = null,
+    @SerialName("last")
+    val last: Boolean? = null,
 )

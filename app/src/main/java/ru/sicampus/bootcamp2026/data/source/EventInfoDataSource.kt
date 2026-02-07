@@ -11,6 +11,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ru.sicampus.bootcamp2026.data.dto.CreateEventDto
 import ru.sicampus.bootcamp2026.data.dto.EventDto
 import ru.sicampus.bootcamp2026.data.dto.RegisterDto
 import ru.sicampus.bootcamp2026.data.dto.UserDto
@@ -75,6 +76,35 @@ class EventInfoDataSource {
                 setBody(requestBody)
             }
 
+            result.body<Unit>()
+        }
+    }
+
+    suspend fun createEvent(
+        organizerId: Int,
+        title: String,
+        description: String,
+        date: String,
+        startTime: String,
+        endTime: String,
+        participantsId: List<Int>
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+
+        val requestBody = CreateEventDto(
+            organizerId = organizerId,
+            title = title,
+            description = description,
+            date = date,
+            startTime = startTime,
+            endTime = endTime,
+            participantsId = participantsId
+        )
+        runCatching {
+            val result = Network.client.post("${Network.HOST}/api/meetings"){
+                addAuthHeader()
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }
             result.body<Unit>()
         }
     }
