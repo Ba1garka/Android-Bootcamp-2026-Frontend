@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.coroutineScope
 import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
+import ru.sicampus.bootcamp2026.ui.screen.register.InputField
 import ru.sicampus.bootcamp2026.ui.theme.Black
 import ru.sicampus.bootcamp2026.ui.theme.Montserrat
 import ru.sicampus.bootcamp2026.ui.theme.SineyIney
@@ -101,67 +102,34 @@ private fun Content(
 ) {
     var inputLogin by remember { mutableStateOf("") }
     var inputPassword by remember { mutableStateOf("") }
-    val focusPasswordRequester = remember { FocusRequester() }
 
     Spacer(modifier = Modifier.size(16.dp))
     Column() {
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(51.dp),
+        InputField(
             value = inputLogin,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = {
-                    focusPasswordRequester.requestFocus()
-                }
-            ),
             onValueChange = {
                 inputLogin = it
                 viewModel.onIntent(AuthIntent.TextInput(inputLogin, inputPassword))
-            },
-            label = { Text("Почта", color = textColor, fontSize = 16.sp) },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = containerColor,
-                unfocusedContainerColor = containerColor,
-                disabledContainerColor = containerColor.copy(alpha = 0.5f),
-            ),
-            shape = RoundedCornerShape(30.dp),
-            singleLine = true
+                            },
+            placeholder = "Почта",
+            containerColor = containerColor,
+            textColor = textColor,
+            modifier = Modifier.fillMaxWidth().height(51.dp)
         )
         Spacer(modifier = Modifier.size(16.dp))
-        TextField(
-            modifier = Modifier
-                .focusRequester(focusPasswordRequester)
-                .fillMaxWidth()
-                .height(51.dp),
+
+        InputField(
             value = inputPassword,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    viewModel.onIntent(AuthIntent.Send(inputLogin, inputPassword))
-                }
-            ),
             onValueChange = {
                 inputPassword = it
                 viewModel.onIntent(AuthIntent.TextInput(inputLogin, inputPassword))
-            },
-            label = { Text("Пароль", color = textColor, fontSize = 16.sp)},
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = containerColor,
-                unfocusedContainerColor = containerColor,
-                disabledContainerColor = containerColor.copy(alpha = 0.5f),
-            ),
-            shape = RoundedCornerShape(30.dp),
-            singleLine = true
+                            },
+            placeholder = "Пароль",
+            containerColor = containerColor,
+            textColor = textColor,
+            modifier = Modifier.fillMaxWidth().height(51.dp),
         )
+
 
         Spacer(modifier = Modifier.size(16.dp))
         Button(

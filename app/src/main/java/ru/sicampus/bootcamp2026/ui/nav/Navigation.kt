@@ -29,6 +29,7 @@ import ru.sicampus.bootcamp2026.ui.screen.add.AddScreen
 import ru.sicampus.bootcamp2026.ui.screen.details.MeetingDetailScreen
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.screen.list.ListScreen
+import ru.sicampus.bootcamp2026.ui.screen.profile.ProfileScreen
 import ru.sicampus.bootcamp2026.ui.screen.register.RegistrationScreen
 
 @Composable
@@ -103,9 +104,15 @@ fun Navigation() {
                     }
                 )
             }
-//            composable("profile") {
-//                ProfileScreen()
-//            }
+            composable<ProfileRoute> {
+                ProfileScreen(
+                    onExitClick= {
+                        navController.navigate(AuthRoute){
+                            popUpTo(AuthRoute) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
 
         val showBottomBar = when (currentRoute) {

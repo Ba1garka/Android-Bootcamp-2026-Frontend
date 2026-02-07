@@ -23,12 +23,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
-import ru.sicampus.bootcamp2026.ui.screen.home.HomeState
-import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
@@ -43,7 +43,7 @@ import kotlin.text.substring
 
 
 @Composable
-fun CalendarScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>()) {
+fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>()) {
 
     val user = remember { mutableStateOf<UserDto?>(null) }
 
@@ -51,12 +51,16 @@ fun CalendarScreen( viewModel : HomeViewModel = viewModel<HomeViewModel>()) {
         user.value = AuthLocalDataSource.getCurrentUser()
     }
 
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        viewModel.getData()
+    }
+
     val state by viewModel.uiState.collectAsState()
 
     when(val currentState = state){
-        is HomeState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
-        is HomeState.Loading -> CalendarLoadingState()
-        is HomeState.Content -> CalendarContentState(currentState, user)
+        is CalendarState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
+        is CalendarState.Loading -> CalendarLoadingState()
+        is CalendarState.Content -> CalendarContentState(currentState, user)
     }
 
 }
@@ -74,7 +78,7 @@ private fun CalendarLoadingState(){
 }
 
 @Composable
-private fun CalendarErrorState( state: HomeState.Error, onRefresh: () -> Unit ){
+private fun CalendarErrorState( state: CalendarState.Error, onRefresh: () -> Unit ){
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -98,17 +102,23 @@ enum class CalendarViewMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarContentState( state: HomeState.Content , user: MutableState<UserDto?>){
+private fun CalendarContentState( state: CalendarState.Content , user: MutableState<UserDto?>){
     val selectedDate = remember { mutableStateOf(LocalDate.now()) }
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
 
+    val events = remember(state.events, user.value) {
+        state.events.filter { event ->
 
-    val events = remember { state.events.filter { event ->
-        event.participants.any { participant ->
-            participant.status == "Принято" && participant.fullName == user.value?.fullName
+            val isAcceptedParticipant = event.participants.any { participant ->
+                participant.status == "Принято" && participant.fullName == user.value?.fullName
+            }
+
+            val isOrganizer = event.organizerName == user.value?.fullName
+
+            isAcceptedParticipant || isOrganizer
         }
     }
-    }
+
     Scaffold(
         topBar = {
             TopAppBar(
