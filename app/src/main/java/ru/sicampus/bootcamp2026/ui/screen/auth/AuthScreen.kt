@@ -1,6 +1,7 @@
 package ru.sicampus.bootcamp2026.ui.screen.auth
 
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,9 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -48,6 +52,7 @@ import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
 import ru.sicampus.bootcamp2026.ui.nav.RegisterRoute
 import ru.sicampus.bootcamp2026.ui.screen.register.InputField
 import ru.sicampus.bootcamp2026.ui.theme.Black
+import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Montserrat
 import ru.sicampus.bootcamp2026.ui.theme.SineyIney
 import ru.sicampus.bootcamp2026.ui.theme.buttonTextColor
@@ -61,6 +66,7 @@ fun AuthScreen(
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.actionFlow.collect { action ->
@@ -75,7 +81,7 @@ fun AuthScreen(
         verticalArrangement = Arrangement.spacedBy(56.dp)
     ) {
         Text(
-            text = "Авторизация",
+            text = "Здравствуйте!",
             fontSize = 24.sp,
             color = Black,
             fontFamily = Montserrat,
@@ -103,6 +109,13 @@ private fun Content(
 ) {
     var inputLogin by remember { mutableStateOf("") }
     var inputPassword by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    LaunchedEffect(state.error) {
+        if (state.error != null) {
+            Toast.makeText(context, "Не удалось войти", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Spacer(modifier = Modifier.size(16.dp))
     Column() {
@@ -111,11 +124,11 @@ private fun Content(
             onValueChange = {
                 inputLogin = it
                 viewModel.onIntent(AuthIntent.TextInput(inputLogin, inputPassword))
-                            },
+            },
             placeholder = "Почта",
             containerColor = containerColor,
             textColor = textColor,
-            modifier = Modifier.fillMaxWidth().height(51.dp)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         )
         Spacer(modifier = Modifier.size(16.dp))
 
@@ -124,33 +137,33 @@ private fun Content(
             onValueChange = {
                 inputPassword = it
                 viewModel.onIntent(AuthIntent.TextInput(inputLogin, inputPassword))
-                            },
+            },
             placeholder = "Пароль",
             containerColor = containerColor,
+            isPassword = true,
             textColor = textColor,
-            modifier = Modifier.fillMaxWidth().height(51.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         )
 
 
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(40.dp))
         Button(
-            modifier = Modifier.fillMaxWidth().height(51.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             onClick = {
                 viewModel.onIntent(AuthIntent.Send(inputLogin, inputPassword))
             },
+            enabled = inputLogin.isNotEmpty() && inputPassword.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = SineyIney,
-                disabledContainerColor = SineyIney//.copy(alpha = 0.38f),
+                disabledContainerColor = SineyIney.copy(alpha = 0.5f),
             ),
         ) {
             Text(
                 text = "Войти",
-                fontSize = 16.sp,
                 color = buttonTextColor,
-                fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                style = CustomTypography.bodyMedium
             )
         }
 
@@ -162,17 +175,19 @@ private fun Content(
         ) {
             Text(
                 text = "Нет аккаунта?",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = Black,
-                fontFamily = FontFamily.Default
+                fontFamily = FontFamily.Default,
+                style = MaterialTheme.typography.bodyMedium
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
                 text = "Зарегистрироваться",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 color = SineyIney,
+                style = MaterialTheme.typography.bodyMedium,
                 fontFamily = FontFamily.Default,
                 modifier = Modifier.clickable {
                     navController.navigate(RegisterRoute)
@@ -181,14 +196,14 @@ private fun Content(
         }
     }
 
-    if (state.error != null) {
-        Text(
-            modifier = Modifier,
-            text = state.error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Red,
-        )
-    }
+//    if (state.error != null) {
+//        Text(
+//            modifier = Modifier,
+//            text = state.error,
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = Color.Red,
+//        )
+//    }
 }
 
 

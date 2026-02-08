@@ -56,11 +56,15 @@ import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Green
 import ru.sicampus.bootcamp2026.ui.theme.MediumGray
 import ru.sicampus.bootcamp2026.ui.theme.Red
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MyMeetingsScreen(
     viewModel : MyMeetingViewModel = viewModel<MyMeetingViewModel>(),
-    onCardClick: () -> Unit,
+    onDetailClick: () -> Unit,
+    homeViewModel: HomeViewModel,
     onReturnToHome: () -> Unit
 ) {
 
@@ -70,13 +74,17 @@ fun MyMeetingsScreen(
         user.value = AuthLocalDataSource.getCurrentUser()
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.getData()
+    }
+
     val state by viewModel.uiState.collectAsState()
 
     when(val currentState = state){
         is MyMeetingsState.Error -> MeetingErrorState(currentState, onRefresh = { viewModel.getData() })
         is MyMeetingsState.Loading -> MeetingLoadingState()
         is MyMeetingsState.Content -> MeetingContentState(
-            viewModel, currentState, user, onCardClick, onReturnToHome)
+            viewModel, homeViewModel, currentState, user, onDetailClick, onReturnToHome)
     }
 
 }
@@ -115,9 +123,10 @@ private  fun MeetingErrorState( state: MyMeetingsState.Error, onRefresh: () -> U
 @Composable
 private fun MeetingContentState(
     viewModel: MyMeetingViewModel,
+    homeViewModel: HomeViewModel,
     state: MyMeetingsState.Content,
     user: MutableState<UserDto?>,
-    onCardClick: () -> Unit,
+    onDetailClick: () -> Unit,
     onReturnToHome: () -> Unit
 ){
     Column(
@@ -151,14 +160,14 @@ private fun MeetingContentState(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(state.meetings) { item ->
-                InvitationCard(viewModel, item = item, user, onCardClick)
+                InvitationCard(viewModel, homeViewModel,item, user, onDetailClick )
             }
         }
     }
 }
 
 @Composable
-fun InvitationCard(viewModel: MyMeetingViewModel, item: EventEntity , user: MutableState<UserDto?>, onCardClick: () -> Unit) {
+fun InvitationCard(viewModel: MyMeetingViewModel, homeViewModel: HomeViewModel, item: EventEntity , user: MutableState<UserDto?>, onDetailClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,7 +177,10 @@ fun InvitationCard(viewModel: MyMeetingViewModel, item: EventEntity , user: Muta
                 horizontal = 10.dp,
                 vertical = 16.dp
             )
-            .clickable { onCardClick() }
+            .clickable {
+                homeViewModel.selectEvent(item)
+                onDetailClick()
+            }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -187,12 +199,12 @@ fun InvitationCard(viewModel: MyMeetingViewModel, item: EventEntity , user: Muta
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = item.date,
+                        text = LocalDate.parse(item.date).format(DateTimeFormatter.ofPattern("dd-MM")),
                         style = CustomTypography.bodySmall,
                         color = Color.Black.copy(alpha = 0.5f),
                     )
                     Text(
-                        text = item.startTime,
+                        text = LocalTime.parse(item.startTime).format(DateTimeFormatter.ofPattern("HH:mm")),
                         style = CustomTypography.bodySmall,
                         color = Color.Black.copy(alpha = 0.5f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -218,7 +230,7 @@ fun InvitationCard(viewModel: MyMeetingViewModel, item: EventEntity , user: Muta
                         color = Color.Black.copy(alpha = 0.5f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp, end = 12.dp)
                     )
                 }
             }

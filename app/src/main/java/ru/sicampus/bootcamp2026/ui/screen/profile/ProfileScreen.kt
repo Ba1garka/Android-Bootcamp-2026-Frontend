@@ -9,7 +9,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -163,7 +166,6 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit, profileView
         Log.d("DEBUG", "Gallery launcher callback, uri = $uri")
         if (uri != null) {
             Log.d("DEBUG", "Converting URI to bitmap...")
-            // Конвертируем URI в Bitmap
             val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val source =
                     android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
@@ -218,7 +220,6 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit, profileView
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box {
-
                         Box(
                             modifier = Modifier
                                 .size(149.dp)
@@ -273,16 +274,6 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit, profileView
                         fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
                         fontWeight = FontWeight.Medium
                     )
-
-                    imageUrl?.let { url ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "URL: ${url.take(30)}...",
-                            fontSize = 10.sp,
-                            color = MediumGray,
-                            maxLines = 1
-                        )
-                    }
                 }
             }
 
@@ -426,9 +417,9 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit, profileView
             EditDialog(
                 currentEmail = user.value?.email ?: "Неизвестно",
                 onDismiss = { showEditDialog = false },
-                profileViewModel,
-                user,
-                onExitClick
+                profileViewModel = profileViewModel,
+                user = user,
+                onExitClick = onExitClick
             )
         }
 
@@ -608,7 +599,7 @@ fun EditDialog(
     onDismiss: () -> Unit,
     profileViewModel: ProfileViewModel,
     user : MutableState<UserDto?>,
-    onExitClick:() -> Unit
+    onExitClick: () -> Unit
 ) {
     var newEmail by remember { mutableStateOf(currentEmail) }
 
@@ -690,6 +681,7 @@ fun EditDialog(
                 Spacer(modifier = Modifier.height(24.dp))
                 val id = user.value?.id?: 0
                 val fullname = user.value?.fullName ?: "Неизвестно"
+                val email = user.value?.email ?: "Неизвестно"
                 val context = LocalContext.current
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
@@ -700,11 +692,15 @@ fun EditDialog(
                             .clip(RoundedCornerShape(20.dp))
                             .background(SineyIney)
                             .clickable {
-                                profileViewModel.onIntent(ProfileIntent.Send(id, newEmail, fullname ))
-                                user.value = user.value?.copy(email = newEmail)
-                                onDismiss()
-                                Toast.makeText(context,"Вы успешно изменили почту", Toast.LENGTH_LONG).show()
-                                onExitClick()
+                                if (newEmail.isEmpty() || newEmail==email){
+                                    Toast.makeText(context,"Введите новую почту", Toast.LENGTH_LONG).show()
+                                } else{
+                                    profileViewModel.onIntent(ProfileIntent.Send(id, newEmail, fullname ))
+                                    user.value = user.value?.copy(email = newEmail)
+                                    onDismiss()
+                                    Toast.makeText(context,"Вы успешно изменили почту", Toast.LENGTH_LONG).show()
+                                    onExitClick()
+                                }
                             }
                     ) {
                         Text(

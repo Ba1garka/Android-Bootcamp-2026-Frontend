@@ -21,7 +21,6 @@ class ProfileViewModel : ViewModel() {
     private val _uiState : MutableStateFlow<ProfileState> =  MutableStateFlow(ProfileState.Loading)
     val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
 
-
     fun onIntent(intent: ProfileIntent) {
         when (intent) {
             is ProfileIntent.Send -> {

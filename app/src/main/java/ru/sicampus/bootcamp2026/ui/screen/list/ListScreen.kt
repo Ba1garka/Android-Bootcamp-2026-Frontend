@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -20,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,9 @@ import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Green
 import ru.sicampus.bootcamp2026.ui.theme.MediumGray
 import ru.sicampus.bootcamp2026.ui.theme.Red
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun ListScreen(viewModel : ListViewModel = viewModel<ListViewModel>()) {
@@ -104,12 +109,9 @@ private fun ListContentState(viewModel: ListViewModel, state: ListState.Content,
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 48.dp,
-                bottom = 56.dp
-            )
+            .safeDrawingPadding()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 56.dp)
     ) {
         Text(
             text = "cписок приглашений",
@@ -167,12 +169,12 @@ fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableSt
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = item.date,
+                        text = LocalDate.parse(item.date).format(DateTimeFormatter.ofPattern("dd-MM")),
                         style = CustomTypography.bodySmall,
                         color = Color.Black.copy(alpha = 0.5f),
                     )
                     Text(
-                        text = item.startTime,
+                        text = LocalTime.parse(item.startTime).format(DateTimeFormatter.ofPattern("HH:mm")),
                         style = CustomTypography.bodySmall,
                         color = Color.Black.copy(alpha = 0.5f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -198,7 +200,7 @@ fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableSt
                         color = Color.Black.copy(alpha = 0.5f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp, end = 12.dp)
                     )
                 }
             }
@@ -260,12 +262,12 @@ fun InvitationCard(viewModel: ListViewModel, item: EventEntity , user: MutableSt
 }
 
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-fun ListScreenPreview() {
-    MaterialTheme(
-        typography = CustomTypography
-    ) {
-        ListScreen()
-    }
-}
+//@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+//@Composable
+//fun ListScreenPreview() {
+//    MaterialTheme(
+//        typography = CustomTypography
+//    ) {
+//        ListScreen()
+//    }
+//}

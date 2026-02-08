@@ -12,15 +12,6 @@ import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeState
 
 class CalendarViewModel: ViewModel() {
-    private val _selectedEvent = MutableStateFlow<EventEntity?>(null)
-
-    fun selectEvent(event: EventEntity) {
-        _selectedEvent.value = event
-    }
-
-    fun getSelectedEvent(): EventEntity? {
-        return _selectedEvent.value
-    }
     private val getEventsUseCase = GetEventsUseCase(
         eventRepository = EventRepository(EventInfoDataSource())
     )

@@ -31,7 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
-import ru.sicampus.bootcamp2026.ui.nav.DetailsRoute
+import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
@@ -39,6 +39,7 @@ import ru.sicampus.bootcamp2026.ui.theme.SineyIney
 import ru.sicampus.bootcamp2026.ui.theme.Yellow
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
@@ -46,8 +47,11 @@ import kotlin.text.substring
 
 
 @Composable
-fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>(), onDetailClick: () -> Unit) {
-
+fun CalendarScreen(
+    viewModel: CalendarViewModel = viewModel<CalendarViewModel>(),
+    homeViewModel: HomeViewModel = viewModel<HomeViewModel>(),
+    onDetailClick: () -> Unit
+) {
     val user = remember { mutableStateOf<UserDto?>(null) }
 
     LaunchedEffect(Unit) {
@@ -63,9 +67,15 @@ fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>
     when(val currentState = state){
         is CalendarState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
         is CalendarState.Loading -> CalendarLoadingState()
-        is CalendarState.Content -> CalendarContentState(currentState, user, onDetailClick)
+        is CalendarState.Content -> CalendarContentState(
+            currentState,
+            user,
+            onEventClick = { event ->
+                homeViewModel.selectEvent(event)
+                onDetailClick()
+            }
+        )
     }
-
 }
 
 @Composable
@@ -108,20 +118,17 @@ enum class CalendarViewMode {
 private fun CalendarContentState(
     state: CalendarState.Content,
     user: MutableState<UserDto?>,
-    onDetailClick: () -> Unit
+    onEventClick: (EventEntity) -> Unit
 ){
     val selectedDate = remember { mutableStateOf(LocalDate.now()) }
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
 
     val events = remember(state.events, user.value) {
         state.events.filter { event ->
-
             val isAcceptedParticipant = event.participants.any { participant ->
                 participant.status == "Принято" && participant.fullName == user.value?.fullName
             }
-
             val isOrganizer = event.organizerName == user.value?.fullName
-
             isAcceptedParticipant || isOrganizer
         }
     }
@@ -225,13 +232,14 @@ private fun CalendarContentState(
                     selectedDate = selectedDate.value,
                     startDate = selectedDate.value.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
                     events = events.filter { it.date == selectedDate.value.toString() },
-                    onDetailClick = onDetailClick
+                    onEventClick = onEventClick
                 )
                 CalendarViewMode.WEEK -> WeekView(
                     yearMonth = YearMonth.from(selectedDate.value),
                     selectedDate = selectedDate.value,
                     startDate = selectedDate.value.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
-                    events = events
+                    events = events,
+                    onEventClick = onEventClick
                 )
                 CalendarViewMode.MONTH -> MonthView(
                     yearMonth = YearMonth.from(selectedDate.value),
@@ -246,7 +254,7 @@ private fun CalendarContentState(
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             EventList(
                 events = events.filter { it.date == selectedDate.value.toString() },
-                onDetailClick = onDetailClick
+                onEventClick = onEventClick
             )
         }
     }
@@ -258,18 +266,16 @@ fun DayView(
     selectedDate: LocalDate,
     startDate: LocalDate,
     events: List<EventEntity>,
-    onDayClick: (LocalDate) -> Unit = {},
-    onDetailClick: () -> Unit
+    onEventClick: (EventEntity) -> Unit,
+    onDayClick: (LocalDate) -> Unit = {}
 ) {
     val days = remember(startDate) { (0..6).map { startDate.plusDays(it.toLong()) } }
-    // Заголовок в виде недели
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-
         Box(modifier = Modifier.width(40.dp))
-
         days.forEachIndexed { index, date ->
             val isCurrentMonth = date.month == yearMonth.month
             val isToday = date == LocalDate.now()
@@ -278,7 +284,7 @@ fun DayView(
 
             DayCircle(
                 date = date,
-                isCurrentMonth = isCurrentMonth ,
+                isCurrentMonth = isCurrentMonth,
                 isToday = isToday,
                 isSelected = isSelected,
                 events = dayEvents,
@@ -290,24 +296,26 @@ fun DayView(
 
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         items(10) { index ->
-
             val hour = 9 + index
             val hourEvents = events.filter { it.startTime.substring(0, 2).toInt() == hour }
 
             Column(
                 modifier = Modifier.fillMaxWidth().height(90.dp).border(0.5.dp, Color.LightGray)
             ) {
-                // время
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = String.format("%02d:00", hour),
                         modifier = Modifier.width(80.dp).padding(8.dp),
                         fontSize = 14.sp
                     )
-                    // встречи
                     Column(modifier = Modifier) {
                         hourEvents.forEach { event ->
-                            EventCard(event = event, modifier = Modifier.padding(4.dp), mode = false, onDetailClick)
+                            EventCard(
+                                event = event,
+                                modifier = Modifier.padding(4.dp),
+                                mode = false,
+                                onEventClick = onEventClick
+                            )
                         }
                     }
                 }
@@ -322,11 +330,11 @@ fun WeekView(
     selectedDate: LocalDate,
     startDate: LocalDate,
     events: List<EventEntity>,
+    onEventClick: (EventEntity) -> Unit,
     onDayClick: (LocalDate) -> Unit = {}
 ) {
     val days = remember(startDate) { (0..6).map { startDate.plusDays(it.toLong()) } }
 
-    // Группируем события по дням и часам
     val eventsGroup = remember(events, days) {
         days.associateWith { day ->
             events.filter { it.date == day.toString() }.groupBy { it.startTime.substring(0, 2).toInt() }
@@ -334,14 +342,11 @@ fun WeekView(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Заголовок в виде недели
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-
             Box(modifier = Modifier.width(40.dp))
-
             days.forEachIndexed { index, date ->
                 val isCurrentMonth = date.month == yearMonth.month
                 val isToday = date == LocalDate.now()
@@ -350,7 +355,7 @@ fun WeekView(
 
                 DayCircle(
                     date = date,
-                    isCurrentMonth = isCurrentMonth ,
+                    isCurrentMonth = isCurrentMonth,
                     isToday = isToday,
                     isSelected = isSelected,
                     events = dayEvents,
@@ -366,6 +371,7 @@ fun WeekView(
                     hour = 9 + index,
                     days = days,
                     eventsGroup = eventsGroup,
+                    onEventClick = onEventClick,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -378,10 +384,10 @@ fun HourRow(
     hour: Int,
     days: List<LocalDate>,
     eventsGroup: Map<LocalDate, Map<Int, List<EventEntity>>>,
+    onEventClick: (EventEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
-        // Время
         Text(
             text = String.format("%02d:00", hour),
             modifier = Modifier.width(50.dp).padding(horizontal = 8.dp, vertical = 25.dp),
@@ -397,14 +403,17 @@ fun HourRow(
             ) {
                 val hourEvents = eventsGroup[day]?.get(hour) ?: emptyList()
 
-                // Cобытия, которые начинаются в этот час
                 Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 1.dp)
                 ) {
                     hourEvents.forEach { event ->
                         EventChip(
                             event = event,
-                            modifier = Modifier.fillMaxWidth().height(63.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(63.dp)
+                                .clickable { onEventClick(event) },
+                            onClick = { onEventClick(event) }
                         )
                     }
                 }
@@ -416,16 +425,19 @@ fun HourRow(
 @Composable
 fun EventChip(
     event: EventEntity,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors( containerColor = BluePrimary ),
+        modifier = modifier.clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = BluePrimary),
         shape = RoundedCornerShape(4.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-        ) { Text(text = event.title, fontSize = 12.sp, fontWeight = FontWeight.Medium) }
+        ) {
+            Text(text = event.title, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        }
     }
 }
 
@@ -495,7 +507,6 @@ fun DayCircle(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // кружок
         Box(
             modifier = Modifier
                 .size(42.dp)
@@ -516,19 +527,18 @@ fun DayCircle(
                     color = when {
                         isToday -> MaterialTheme.colorScheme.secondary
                         isCurrentMonth -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f) // другой месяц
+                        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
                     },
                     shape = CircleShape
                 )
                 .clickable { onDateClick(date) },
             contentAlignment = Alignment.Center
         ) {
-            // число кружка
             Text(
                 text = date.dayOfMonth.toString(),
                 color = when {
                     isSelected -> MaterialTheme.colorScheme.onPrimary
-                    !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f) // другой месяц
+                    !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                     isToday -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.onSurface
                 },
@@ -573,7 +583,7 @@ fun EventDots(events: List<EventEntity>) {
 }
 
 @Composable
-fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier, onDetailClick: () -> Unit) {
+fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier, onEventClick: (EventEntity) -> Unit) {
     LazyColumn(modifier = modifier) {
         if (events.isEmpty()) {
             item {
@@ -592,7 +602,7 @@ fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier, onDetail
                     event = event,
                     modifier = Modifier.padding(8.dp),
                     mode = true,
-                    onDetailClick
+                    onEventClick = onEventClick
                 )
             }
         }
@@ -604,13 +614,19 @@ fun EventCard(
     event: EventEntity,
     modifier: Modifier = Modifier,
     mode: Boolean,
-    onDetailClick: () -> Unit
+    onEventClick: (EventEntity) -> Unit
 ) {
+    val startTime = LocalTime.parse(event.startTime)
+    val endTime = LocalTime.parse(event.endTime)
+
     Card(
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(
-            onClick = { onDetailClick() },
-            interactionSource = remember { MutableInteractionSource() }
-        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(
+                onClick = { onEventClick(event) },
+                interactionSource = remember { MutableInteractionSource() }
+            ),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -625,7 +641,6 @@ fun EventCard(
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
         ) {
-            // Левая цветная полоса
             Box( modifier = Modifier.width(6.dp).fillMaxHeight().background(BluePrimary) )
 
             Spacer( modifier = Modifier.width(8.dp) )
@@ -635,7 +650,6 @@ fun EventCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Время начала
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -649,7 +663,7 @@ fun EventCard(
                     }
 
                     Text(
-                        text = event.startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        text = startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -658,7 +672,6 @@ fun EventCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Время окончания
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -671,7 +684,7 @@ fun EventCard(
                         )
                     }
                     Text(
-                        text = event.endTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                        text = endTime.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -679,7 +692,6 @@ fun EventCard(
                 }
             }
 
-            // Вертикальный разделитель
             Divider(
                 modifier = Modifier.width(1.dp).fillMaxHeight(),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
@@ -687,7 +699,6 @@ fun EventCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Столбец с названием и описанием
             Column(
                 modifier = Modifier.weight(1f).padding(vertical = 12.dp, horizontal = 4.dp),
                 verticalArrangement = Arrangement.Center
@@ -718,14 +729,3 @@ fun EventCard(
         }
     }
 }
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun CalendarScreenPreview() {
-//    MaterialTheme(
-//        typography = CustomTypography
-//    ) {
-//        CalendarScreen()
-//    }
-//}

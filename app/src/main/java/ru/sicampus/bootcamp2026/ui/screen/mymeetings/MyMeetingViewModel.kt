@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ru.sicampus.bootcamp2026.data.EventRepository
 import ru.sicampus.bootcamp2026.data.source.EventInfoDataSource
+import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
 import ru.sicampus.bootcamp2026.domain.mymeetings.DeleteMeetingUseCase
 import ru.sicampus.bootcamp2026.domain.mymeetings.GetMeetingsUseCase
 
@@ -25,6 +26,13 @@ class MyMeetingViewModel : ViewModel() {
     )
     private val _uiState : MutableStateFlow<MyMeetingsState> =  MutableStateFlow(MyMeetingsState.Loading)
     val uiState: StateFlow<MyMeetingsState> = _uiState.asStateFlow()
+
+    private val _selectedEvent = MutableStateFlow<EventEntity?>(null)
+    val selectedEvent: StateFlow<EventEntity?> = _selectedEvent.asStateFlow()
+
+    fun selectEvent(event: EventEntity) {
+        _selectedEvent.value = event
+    }
 
     init {
         getData()

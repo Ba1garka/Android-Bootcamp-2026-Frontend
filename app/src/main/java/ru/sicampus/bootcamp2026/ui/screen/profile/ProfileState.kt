@@ -6,7 +6,5 @@ import ru.sicampus.bootcamp2026.domain.home.entities.UserEntity
 sealed interface ProfileState {
     data class Error( val reason: String ): ProfileState
     data object Loading: ProfileState
-    data class Content(
-        val user: UserEntity
-    ): ProfileState
+    data object Content: ProfileState
 }
