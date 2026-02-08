@@ -29,6 +29,7 @@ import ru.sicampus.bootcamp2026.ui.screen.add.AddScreen
 import ru.sicampus.bootcamp2026.ui.screen.details.MeetingDetailScreen
 import ru.sicampus.bootcamp2026.ui.screen.home.HomeViewModel
 import ru.sicampus.bootcamp2026.ui.screen.list.ListScreen
+import ru.sicampus.bootcamp2026.ui.screen.mymeetings.MyMeetingsScreen
 import ru.sicampus.bootcamp2026.ui.screen.profile.ProfileScreen
 import ru.sicampus.bootcamp2026.ui.screen.register.RegistrationScreen
 
@@ -46,7 +47,7 @@ fun Navigation() {
 
         NavHost(
             navController = navController,
-            startDestination = RegisterRoute,
+            startDestination = AuthRoute,
             modifier = Modifier.fillMaxSize()
         ) {
             composable<HomeRoute> {
@@ -59,7 +60,11 @@ fun Navigation() {
             }
 
             composable<CalendarRoute> {
-                CalendarScreen()
+                CalendarScreen(
+                    onDetailClick = {
+                        navController.navigate(DetailsRoute)
+                    }
+                )
             }
             composable<RegisterRoute> {
                 RegistrationScreen(
@@ -89,6 +94,16 @@ fun Navigation() {
             composable<ListRoute> {
                 ListScreen()
             }
+            composable<MyMeetingRoute> {
+                MyMeetingsScreen(
+                    onCardClick = {
+                        navController.navigate(DetailsRoute)
+                    },
+                    onReturnToHome={
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable<DetailsRoute> {
                 MeetingDetailScreen(
                     viewModel = homeViewModel,
@@ -110,6 +125,9 @@ fun Navigation() {
                         navController.navigate(AuthRoute){
                             popUpTo(AuthRoute) { inclusive = true }
                         }
+                    },
+                    onMeetClick = {
+                        navController.navigate(MyMeetingRoute)
                     }
                 )
             }
@@ -119,7 +137,8 @@ fun Navigation() {
             "ru.sicampus.bootcamp2026.ui.nav.HomeRoute",
             "ru.sicampus.bootcamp2026.ui.nav.CalendarRoute",
             "ru.sicampus.bootcamp2026.ui.nav.ProfileRoute",
-            "ru.sicampus.bootcamp2026.ui.nav.ListRoute" -> true
+            "ru.sicampus.bootcamp2026.ui.nav.ListRoute",
+            "ru.sicampus.bootcamp2026.ui.nav.MyMeetingRoute" -> true
             else -> false
         }
 

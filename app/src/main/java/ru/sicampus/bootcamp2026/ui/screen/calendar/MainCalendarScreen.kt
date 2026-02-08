@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
+import ru.sicampus.bootcamp2026.ui.nav.DetailsRoute
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
@@ -43,7 +46,7 @@ import kotlin.text.substring
 
 
 @Composable
-fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>()) {
+fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>(), onDetailClick: () -> Unit) {
 
     val user = remember { mutableStateOf<UserDto?>(null) }
 
@@ -60,7 +63,7 @@ fun CalendarScreen( viewModel : CalendarViewModel = viewModel<CalendarViewModel>
     when(val currentState = state){
         is CalendarState.Error -> CalendarErrorState(currentState, onRefresh = { viewModel.getData() })
         is CalendarState.Loading -> CalendarLoadingState()
-        is CalendarState.Content -> CalendarContentState(currentState, user)
+        is CalendarState.Content -> CalendarContentState(currentState, user, onDetailClick)
     }
 
 }
@@ -102,7 +105,11 @@ enum class CalendarViewMode {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CalendarContentState( state: CalendarState.Content , user: MutableState<UserDto?>){
+private fun CalendarContentState(
+    state: CalendarState.Content,
+    user: MutableState<UserDto?>,
+    onDetailClick: () -> Unit
+){
     val selectedDate = remember { mutableStateOf(LocalDate.now()) }
     val calendarMode = remember { mutableStateOf(CalendarViewMode.DAY) }
 
@@ -217,7 +224,8 @@ private fun CalendarContentState( state: CalendarState.Content , user: MutableSt
                     yearMonth = YearMonth.from(selectedDate.value),
                     selectedDate = selectedDate.value,
                     startDate = selectedDate.value.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
-                    events = events.filter { it.date == selectedDate.value.toString() }
+                    events = events.filter { it.date == selectedDate.value.toString() },
+                    onDetailClick = onDetailClick
                 )
                 CalendarViewMode.WEEK -> WeekView(
                     yearMonth = YearMonth.from(selectedDate.value),
@@ -237,7 +245,8 @@ private fun CalendarContentState( state: CalendarState.Content , user: MutableSt
 
             Divider(modifier = Modifier.padding(vertical = 8.dp))
             EventList(
-                events = events.filter { it.date == selectedDate.value.toString() }
+                events = events.filter { it.date == selectedDate.value.toString() },
+                onDetailClick = onDetailClick
             )
         }
     }
@@ -249,7 +258,8 @@ fun DayView(
     selectedDate: LocalDate,
     startDate: LocalDate,
     events: List<EventEntity>,
-    onDayClick: (LocalDate) -> Unit = {}
+    onDayClick: (LocalDate) -> Unit = {},
+    onDetailClick: () -> Unit
 ) {
     val days = remember(startDate) { (0..6).map { startDate.plusDays(it.toLong()) } }
     // Заголовок в виде недели
@@ -297,7 +307,7 @@ fun DayView(
                     // встречи
                     Column(modifier = Modifier) {
                         hourEvents.forEach { event ->
-                            EventCard(event = event, modifier = Modifier.padding(4.dp), mode = false)
+                            EventCard(event = event, modifier = Modifier.padding(4.dp), mode = false, onDetailClick)
                         }
                     }
                 }
@@ -563,12 +573,12 @@ fun EventDots(events: List<EventEntity>) {
 }
 
 @Composable
-fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier) {
+fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier, onDetailClick: () -> Unit) {
     LazyColumn(modifier = modifier) {
         if (events.isEmpty()) {
             item {
                 Text(
-                    text = "No events for this day",
+                    text = "На сегодня событий нет",
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     textAlign = TextAlign.Center,
                     color = Color.Gray,
@@ -578,7 +588,12 @@ fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier) {
         }
         else {
             items(events) { event ->
-                EventCard(event = event, modifier = Modifier.padding(8.dp), mode = true)
+                EventCard(
+                    event = event,
+                    modifier = Modifier.padding(8.dp),
+                    mode = true,
+                    onDetailClick
+                )
             }
         }
     }
@@ -588,10 +603,14 @@ fun EventList(events: List<EventEntity>, modifier: Modifier = Modifier) {
 fun EventCard(
     event: EventEntity,
     modifier: Modifier = Modifier,
-    mode: Boolean
+    mode: Boolean,
+    onDetailClick: () -> Unit
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(
+            onClick = { onDetailClick() },
+            interactionSource = remember { MutableInteractionSource() }
+        ),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -701,12 +720,12 @@ fun EventCard(
 }
 
 
-@Preview(showBackground = true)
-@Composable
-fun CalendarScreenPreview() {
-    MaterialTheme(
-        typography = CustomTypography
-    ) {
-        CalendarScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun CalendarScreenPreview() {
+//    MaterialTheme(
+//        typography = CustomTypography
+//    ) {
+//        CalendarScreen()
+//    }
+//}

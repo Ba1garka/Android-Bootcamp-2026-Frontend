@@ -1,6 +1,7 @@
 package ru.sicampus.bootcamp2026.ui.screen.profile
 
 import android.Manifest
+import android.R.attr.delay
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
@@ -57,6 +58,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.data.ImageRepository
@@ -79,7 +83,7 @@ import ru.sicampus.bootcamp2026.ui.theme.VeryDarkGrey
 
 
 @Composable
-fun ProfileScreen( onExitClick: () -> Unit ) {
+fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
 
@@ -105,12 +109,30 @@ fun ProfileScreen( onExitClick: () -> Unit ) {
     }
 
 
-
+    var refreshKey by remember { mutableStateOf(0) }
     val imageBitmap by viewModel.imageBitmap.collectAsState()
     val imageUrl by viewModel.imageUrl.collectAsState()
 
     LaunchedEffect(imageUrl) {
         viewModel.loadProfileImage()
+    }
+
+    val imageUrlWithTimestamp = remember(imageUrl, refreshKey) {
+        imageUrl?.let { url ->
+            if (url.contains("?")) {
+                "$url&refresh=${refreshKey}_${System.currentTimeMillis()}"
+            } else {
+                "$url?refresh=${refreshKey}_${System.currentTimeMillis()}"
+            }
+        }
+    }
+
+    LaunchedEffect(viewModel.isUploading.value, viewModel.imageUrl.value) {
+        if (!viewModel.isUploading.value && viewModel.imageUrl.value != null) {
+            delay(300)
+            refreshKey++
+            Log.d("REFRESH", "Force refresh triggered, key: $refreshKey")
+        }
     }
 
     // Лончеры для камеры и галереи
@@ -119,8 +141,10 @@ fun ProfileScreen( onExitClick: () -> Unit ) {
     ) { bitmap ->
         Log.d("DEBUG", "Camera launcher callback, bitmap = ${bitmap != null}")
         if (bitmap != null) {
+            viewModel.loadProfileImage()
             viewModel.setImage(bitmap, null)
             viewModel.uploadImage(context)
+            viewModel.loadProfileImage()
         } else (Log.d("DEBUG", "Camera returned null bitmap"))
         showImagePickerDialog = false
     }
@@ -201,36 +225,19 @@ fun ProfileScreen( onExitClick: () -> Unit ) {
                                 .size(149.dp)
                                 .clip(RoundedCornerShape(100.dp))
                         ) {
-                            if (imageUrl != null) {
+                            if (imageUrlWithTimestamp != null) {
                                 AsyncImage(
-                                    model = imageUrl,
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imageUrlWithTimestamp)
+                                        .memoryCachePolicy(CachePolicy.DISABLED) // Отключаем кэш памяти
+                                        .diskCachePolicy(CachePolicy.DISABLED)   // Отключаем кэш диска
+                                        .build(),
                                     contentDescription = "Фото профиля",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop,
                                     placeholder = painterResource(id = R.drawable.person),
                                     error = painterResource(id = R.drawable.person)
                                 )
-                            } else if (imageBitmap != null) {
-                                Image(
-                                    bitmap = imageBitmap!!.asImageBitmap(),
-                                    contentDescription = "Фото профиля",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .border(5.dp, VeryDarkGrey, RoundedCornerShape(100.dp))
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.person),
-                                        contentDescription = "Фото профиля",
-                                        modifier = Modifier
-                                            .size(80.dp)
-                                            .align(Alignment.Center)
-                                    )
-                                }
                             }
                         }
 
@@ -372,7 +379,7 @@ fun ProfileScreen( onExitClick: () -> Unit ) {
                     Spacer(modifier = Modifier.width(6.dp))
 
                     IconButton(
-                        onClick = { },
+                        onClick = { onMeetClick() },
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(8.dp))

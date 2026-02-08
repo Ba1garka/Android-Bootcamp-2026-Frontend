@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.coroutineScope
 import ru.sicampus.bootcamp2026.data.source.AuthNetworkDataSource
+import ru.sicampus.bootcamp2026.ui.nav.RegisterRoute
 import ru.sicampus.bootcamp2026.ui.screen.register.InputField
 import ru.sicampus.bootcamp2026.ui.theme.Black
 import ru.sicampus.bootcamp2026.ui.theme.Montserrat
@@ -174,7 +175,7 @@ private fun Content(
                 color = SineyIney,
                 fontFamily = FontFamily.Default,
                 modifier = Modifier.clickable {
-                    navController.navigate("register")
+                    navController.navigate(RegisterRoute)
                 }
             )
         }
