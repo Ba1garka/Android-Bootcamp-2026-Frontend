@@ -1,18 +1,15 @@
 package ru.sicampus.bootcamp2026.ui.screen.profile
 
 import android.Manifest
-import android.R.attr.delay
+import kotlinx.coroutines.delay
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.net.Uri
 import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,11 +27,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,14 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -60,8 +53,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.StateFlow
 import ru.sicampus.bootcamp2026.R
 import ru.sicampus.bootcamp2026.data.ImageRepository
 import ru.sicampus.bootcamp2026.data.dto.UserDto
@@ -72,7 +63,6 @@ import ru.sicampus.bootcamp2026.ui.theme.Black
 import ru.sicampus.bootcamp2026.ui.theme.Black50
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
 import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
-import ru.sicampus.bootcamp2026.ui.theme.Grey
 import ru.sicampus.bootcamp2026.ui.theme.LightGray
 import ru.sicampus.bootcamp2026.ui.theme.MediumGray
 import ru.sicampus.bootcamp2026.ui.theme.PlashkaColor
@@ -83,7 +73,7 @@ import ru.sicampus.bootcamp2026.ui.theme.VeryDarkGrey
 
 
 @Composable
-fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
+fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit, profileViewModel: ProfileViewModel = viewModel()) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
 
@@ -108,6 +98,15 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
         }
     }
 
+    val emailState by profileViewModel.uiState.collectAsState()
+
+    when (emailState) {
+        is ProfileState.Content -> {
+
+        }
+        is ProfileState.Error -> Toast.makeText(context,"Ошибка обновления почты", Toast.LENGTH_LONG).show()
+        ProfileState.Loading -> {}
+    }
 
     var refreshKey by remember { mutableStateOf(0) }
     val imageBitmap by viewModel.imageBitmap.collectAsState()
@@ -127,9 +126,9 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
         }
     }
 
-    LaunchedEffect(viewModel.isUploading.value, viewModel.imageUrl.value) {
+    LaunchedEffect(viewModel.isUploading.collectAsState().value, viewModel.imageUrl.collectAsState().value) {
         if (!viewModel.isUploading.value && viewModel.imageUrl.value != null) {
-            delay(300)
+            delay(500)
             refreshKey++
             Log.d("REFRESH", "Force refresh triggered, key: $refreshKey")
         }
@@ -361,7 +360,7 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
                     .height(60.dp)
                     .clip(RoundedCornerShape(30.dp))
                     .background(BluePrimary)
-                    .clickable { /* Обработка перехода */ }
+                    .clickable { onMeetClick() }
                     .padding(horizontal = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -380,17 +379,13 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
 
                     IconButton(
                         onClick = { onMeetClick() },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                        modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp))
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.arrow_left),
                             contentDescription = "Перейти",
                             tint = SoftWhite,
-                            modifier = Modifier
-                                .size(24.dp)
-                                .rotate(180f)
+                            modifier = Modifier.size(24.dp).rotate(180f)
                         )
                     }
                 }
@@ -399,12 +394,9 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
+                modifier = Modifier.fillMaxWidth().height(56.dp)
                     .clip(RoundedCornerShape(30.dp))
-                    .background(grayContainerColor)
-                    .clickable { onExitClick() },
+                    .background(grayContainerColor).clickable { onExitClick() },
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -413,9 +405,7 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
                 ) {
                     IconButton(
                         onClick = { showEditDialog = true },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                        modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.logout),
@@ -427,11 +417,7 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
 
                     Spacer(modifier = Modifier.width(6.dp))
 
-                    Text(
-                        text = "выйти из аккаунта",
-                        color = redColor,
-                        style = CustomTypography.bodyMedium
-                    )
+                    Text(text = "выйти из аккаунта", color = redColor, style = CustomTypography.bodyMedium)
                 }
             }
         }
@@ -439,7 +425,10 @@ fun ProfileScreen( onExitClick: () -> Unit , onMeetClick:() -> Unit) {
         if (showEditDialog) {
             EditDialog(
                 currentEmail = user.value?.email ?: "Неизвестно",
-                onDismiss = { showEditDialog = false }
+                onDismiss = { showEditDialog = false },
+                profileViewModel,
+                user,
+                onExitClick
             )
         }
 
@@ -616,21 +605,18 @@ fun ImageSourceDialog(
 @Composable
 fun EditDialog(
     currentEmail: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    profileViewModel: ProfileViewModel,
+    user : MutableState<UserDto?>,
+    onExitClick:() -> Unit
 ) {
     var newEmail by remember { mutableStateOf(currentEmail) }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Black.copy(alpha = 0.4f))
-            .clickable(onClick = onDismiss)
+        modifier = Modifier.fillMaxSize().background(Black.copy(alpha = 0.4f)).clickable(onClick = onDismiss)
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(radius = 4.dp)
-                .background(Black.copy(alpha = 0.4f))
+            modifier = Modifier.fillMaxSize().blur(radius = 4.dp).background(Black.copy(alpha = 0.4f))
         )
 
         Box(
@@ -642,20 +628,11 @@ fun EditDialog(
                 .align(Alignment.Center)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .padding(
-                        top = 20.dp,
-                        bottom = 32.dp
-                    ),
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(top = 20.dp, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight()
-                        .padding(horizontal = 24.dp)
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(horizontal = 24.dp)
                 ) {
                     Text(
                         text = "изменить почту",
@@ -665,9 +642,7 @@ fun EditDialog(
                     )
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier
-                            .size(44.dp)
-                            .align(Alignment.TopEnd)
+                        modifier = Modifier.size(44.dp).align(Alignment.TopEnd)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.cross),
@@ -681,9 +656,7 @@ fun EditDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 ) {
                     BasicTextField(
                         value = newEmail,
@@ -692,21 +665,15 @@ fun EditDialog(
                             color = SoftWhite
                         ),
                         singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(20.dp))
                             .background(VeryDarkGrey)
-                            .padding(
-                                horizontal = 16.dp,
-                                vertical = 12.dp
-                            )
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
                     )
 
                     if (newEmail.isEmpty()) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
                                 .background(VeryDarkGrey)
                         ) {
                             Text(
@@ -714,22 +681,18 @@ fun EditDialog(
                                 style = CustomTypography.bodyMedium.copy(
                                     color = SoftWhite.copy(alpha = 0.5f)
                                 ),
-                                modifier = Modifier
-                                    .padding(
-                                        horizontal = 16.dp,
-                                        vertical = 12.dp
-                                    )
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                             )
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
+                val id = user.value?.id?: 0
+                val fullname = user.value?.fullName ?: "Неизвестно"
+                val context = LocalContext.current
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -737,7 +700,11 @@ fun EditDialog(
                             .clip(RoundedCornerShape(20.dp))
                             .background(SineyIney)
                             .clickable {
+                                profileViewModel.onIntent(ProfileIntent.Send(id, newEmail, fullname ))
+                                user.value = user.value?.copy(email = newEmail)
                                 onDismiss()
+                                Toast.makeText(context,"Вы успешно изменили почту", Toast.LENGTH_LONG).show()
+                                onExitClick()
                             }
                     ) {
                         Text(
@@ -747,9 +714,7 @@ fun EditDialog(
                                 fontWeight = FontWeight.Medium
                             ),
                             textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp)
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
                         )
                     }
                 }

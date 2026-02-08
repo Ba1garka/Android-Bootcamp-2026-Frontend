@@ -1,12 +1,11 @@
 package ru.sicampus.bootcamp2026.ui.screen.home
 
-import androidx.compose.foundation.Image
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,26 +18,31 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
+import kotlinx.coroutines.delay
 import ru.sicampus.bootcamp2026.R
+import ru.sicampus.bootcamp2026.data.ImageRepository
 import ru.sicampus.bootcamp2026.data.dto.UserDto
 import ru.sicampus.bootcamp2026.data.source.AuthLocalDataSource
 import ru.sicampus.bootcamp2026.domain.home.entities.EventEntity
-import ru.sicampus.bootcamp2026.ui.screen.calendar.EventCard
+import ru.sicampus.bootcamp2026.ui.camera.CameraViewModal
+import ru.sicampus.bootcamp2026.ui.camera.CameraViewModalFactory
 import ru.sicampus.bootcamp2026.ui.theme.BlackIcon
 import ru.sicampus.bootcamp2026.ui.theme.BluePrimary
-import ru.sicampus.bootcamp2026.ui.theme.CustomTypography
 import ru.sicampus.bootcamp2026.ui.theme.Grey
 import ru.sicampus.bootcamp2026.ui.theme.Yellow
 import java.time.LocalDate
@@ -104,6 +108,48 @@ private fun HomeContentState(
     onDetailClick: () -> Unit,
     viewModel: HomeViewModel
 ){
+
+    val repository = remember { ImageRepository() }
+    val viewModelCamera: CameraViewModal = viewModel(
+        factory = CameraViewModalFactory(repository)
+    )
+    val user = remember { mutableStateOf<UserDto?>(null) }
+
+    LaunchedEffect(Unit) {
+        val currentUser = AuthLocalDataSource.getCurrentUser()
+        user.value = currentUser
+
+        currentUser?.id?.let { id ->
+            viewModelCamera.setUserId(id)
+            viewModelCamera.loadProfileImage()
+        }
+    }
+
+
+    var refreshKey by remember { mutableStateOf(0) }
+    val imageUrl by viewModelCamera.imageUrl.collectAsState()
+
+    LaunchedEffect(imageUrl) {
+        viewModelCamera.loadProfileImage()
+    }
+
+    val imageUrlWithTimestamp = remember(imageUrl, refreshKey) {
+        imageUrl?.let { url ->
+            if (url.contains("?")) {
+                "$url&refresh=${refreshKey}_${System.currentTimeMillis()}"
+            } else {
+                "$url?refresh=${refreshKey}_${System.currentTimeMillis()}"
+            }
+        }
+    }
+
+    LaunchedEffect(viewModelCamera.isUploading.collectAsState().value, viewModelCamera.imageUrl.collectAsState().value) {
+        if (!viewModelCamera.isUploading.value && viewModelCamera.imageUrl.value != null) {
+            delay(400)
+            refreshKey++
+            Log.d("REFRESH", "Force refresh triggered, key: $refreshKey")
+        }
+    }
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -126,12 +172,20 @@ private fun HomeContentState(
                     Box(
                         modifier = Modifier.size(86.dp).clip(CircleShape).background(BluePrimary)
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                            contentDescription = "Аватар пользователя",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        if (imageUrlWithTimestamp!= null){
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(imageUrlWithTimestamp)
+                                    .memoryCachePolicy(CachePolicy.DISABLED)
+                                    .diskCachePolicy(CachePolicy.DISABLED)
+                                    .build(),
+                                contentDescription = "Фото профиля",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                placeholder = painterResource(id = R.drawable.person),
+                                error = painterResource(id = R.drawable.person)
+                            )
+                        }
                     }
 
                     val name = user.value?.fullName ?: "Ивана"
